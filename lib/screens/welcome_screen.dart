@@ -35,11 +35,13 @@ class WelcomeScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xFFA8E6DE), width: 1.2),
+                        border: Border.all(
+                            color: const Color(0xFFA8E6DE), width: 1.2),
                         boxShadow: [
                           BoxShadow(
                             blurRadius: 24,
-                            color: const Color(0xFF0F766E).withValues(alpha: 0.14),
+                            color:
+                                const Color(0xFF0F766E).withValues(alpha: 0.14),
                             offset: const Offset(0, 10),
                           ),
                         ],
@@ -51,7 +53,7 @@ class WelcomeScreen extends StatelessWidget {
                           const _HeroBadge(),
                           const SizedBox(height: 18),
                           Text(
-                            'Willkommen zur\nRZ-Checkliste und Risikoanalyse.',
+                            'Willkommen zur\nRZ-Checkliste und Kritikalitätsanalyse.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               color: const Color(0xFF0B4F4A),
@@ -61,7 +63,7 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            'Rechenzentren werden strukturiert bewertet, Risiken quantifiziert und Evidenzen revisionssicher dokumentiert – normreferenziert und auditfähig.',
+                            'Rechenzentren werden strukturiert bewertet, Kritikalitäten quantifiziert und Evidenzen revisionssicher dokumentiert – normreferenziert und auditfähig.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: const Color(0xFF245F5A),
@@ -74,9 +76,15 @@ class WelcomeScreen extends StatelessWidget {
                             runSpacing: 10,
                             spacing: 10,
                             children: [
-                              _FeatureChip(icon: Icons.rule_folder, label: 'Normreferenziert'),
-                              _FeatureChip(icon: Icons.verified_user, label: 'Auditfähig'),
-                              _FeatureChip(icon: Icons.lock_clock, label: 'Revisionssicher'),
+                              _FeatureChip(
+                                  icon: Icons.rule_folder,
+                                  label: 'Normreferenziert'),
+                              _FeatureChip(
+                                  icon: Icons.verified_user,
+                                  label: 'Auditfähig'),
+                              _FeatureChip(
+                                  icon: Icons.lock_clock,
+                                  label: 'Revisionssicher'),
                             ],
                           ),
                           const SizedBox(height: 22),
@@ -171,7 +179,8 @@ class _FeatureChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF155E57), fontWeight: FontWeight.w700),
+            style: const TextStyle(
+                color: Color(0xFF155E57), fontWeight: FontWeight.w700),
           ),
         ],
       ),

@@ -7,7 +7,8 @@ class RiskEngine {
 
   ScoredRisk calculate({required int likelihood, required int impact}) {
     if (likelihood < 1 || likelihood > 5) {
-      throw ArgumentError.value(likelihood, 'likelihood', 'must be between 1 and 5');
+      throw ArgumentError.value(
+          likelihood, 'likelihood', 'must be between 1 and 5');
     }
     if (impact < 1 || impact > 5) {
       throw ArgumentError.value(impact, 'impact', 'must be between 1 and 5');
@@ -44,13 +45,5 @@ class RiskEngine {
       final avg = values.isEmpty ? 0.0 : values.average;
       return DomainRiskAggregate(domainId: entry.key, max: max, average: avg);
     }).toList(growable: false);
-  }
-
-  List<List<int>> heatmapMatrix(List<RiskRecord> risks) {
-    final matrix = List.generate(5, (_) => List<int>.filled(5, 0));
-    for (final risk in risks) {
-      matrix[risk.impact - 1][risk.likelihood - 1] += 1;
-    }
-    return matrix;
   }
 }

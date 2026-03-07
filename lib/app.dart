@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:rz_checkliste_risikoanalyse/data/checklist_catalog.dart';
+import 'package:rz_checkliste_risikoanalyse/data/services/pdf_report_generator.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:rz_checkliste_risikoanalyse/models/assessment_record.dart';
 import 'package:rz_checkliste_risikoanalyse/models/checklist_item.dart';
@@ -21,46 +23,16 @@ class DatacenterApp extends StatefulWidget {
 class _DatacenterAppState extends State<DatacenterApp> {
   static const _adminEmail = 'admin@rz-checkliste.de';
   static const _adminPassword = 'Admin123!';
+  static const _reportVersion = '1.0';
 
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final PdfReportGenerator _reportGenerator = const PdfReportGenerator();
   final Map<String, String> _accounts = <String, String>{
     _adminEmail: _adminPassword,
   };
   String? _activeUserEmail = _adminEmail;
-  final List<ChecklistItem> _checklistTemplate = [
-    ChecklistItem(
-      id: 'c1',
-      title: 'USV-Redundanz geprüft',
-      description: 'Ist die unterbrechungsfreie Stromversorgung nachweisbar redundant?',
-      riskLevel: 5,
-    ),
-    ChecklistItem(
-      id: 'c2',
-      title: 'Zutrittskontrolle aktiv',
-      description: 'Werden kritische Bereiche nur autorisierten Personen zugänglich gemacht?',
-      riskLevel: 4,
-      isFulfilled: true,
-    ),
-    ChecklistItem(
-      id: 'c3',
-      title: 'Monitoring 24/7',
-      description: 'Werden Infrastruktur und Alarme rund um die Uhr überwacht?',
-      riskLevel: 3,
-    ),
-    ChecklistItem(
-      id: 'c4',
-      title: 'Notfallübung dokumentiert',
-      description: 'Wurde in den letzten 12 Monaten eine DR-Übung mit Lessons Learned durchgeführt?',
-      riskLevel: 4,
-    ),
-    ChecklistItem(
-      id: 'c5',
-      title: 'Netzsegmentierung validiert',
-      description: 'Ist die Segmentierung technisch umgesetzt und regelmäßig geprüft?',
-      riskLevel: 2,
-      isFulfilled: true,
-    ),
-  ];
+  final List<ChecklistItem> _checklistTemplate =
+      buildChecklistTemplateFromCatalog();
   final List<AssessmentRecord> _assessments = <AssessmentRecord>[];
   String? _activeAssessmentId;
 
@@ -77,13 +49,36 @@ class _DatacenterAppState extends State<DatacenterApp> {
     return null;
   }
 
-  List<ChecklistItem> get _activeItems => _activeAssessment?.items ?? <ChecklistItem>[];
+  List<ChecklistItem> get _activeItems =>
+      _activeAssessment?.items ?? <ChecklistItem>[];
 
-  void _updateItem(String id, bool fulfilled) {
+  void _updateItem(String id, int fulfilmentLevel) {
     setState(() {
       for (final item in _activeItems) {
         if (item.id == id) {
-          item.isFulfilled = fulfilled;
+          item.fulfilmentLevel = fulfilmentLevel.clamp(0, 2);
+          break;
+        }
+      }
+    });
+  }
+
+  void _addEvidenceToItem(String id, ChecklistEvidence evidence) {
+    setState(() {
+      for (final item in _activeItems) {
+        if (item.id == id) {
+          item.evidence.add(evidence);
+          break;
+        }
+      }
+    });
+  }
+
+  void _updateItemNote(String id, String note) {
+    setState(() {
+      for (final item in _activeItems) {
+        if (item.id == id) {
+          item.note = note;
           break;
         }
       }
@@ -93,14 +88,20 @@ class _DatacenterAppState extends State<DatacenterApp> {
   void _openChecklist() {
     _navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (_) => ChecklistScreen(items: _activeItems, onItemChanged: _updateItem),
+        builder: (_) => ChecklistScreen(
+          items: _activeItems,
+          onItemChanged: _updateItem,
+          onEvidenceAdded: _addEvidenceToItem,
+          onNoteChanged: _updateItemNote,
+        ),
       ),
     );
   }
 
   void _openRiskAnalysis() {
     _navigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (_) => RiskAnalysisScreen(items: _activeItems)),
+      MaterialPageRoute(
+          builder: (_) => RiskAnalysisScreen(items: _activeItems)),
     );
   }
 
@@ -110,12 +111,31 @@ class _DatacenterAppState extends State<DatacenterApp> {
         builder: (_) => HomeScreen(
           onOpenChecklist: _openChecklist,
           onOpenRiskAnalysis: _openRiskAnalysis,
+          onCompleteAssessment:
+              _activeAssessment == null ? null : _generateCompletionReport,
           onBackToProfile: _openProfile,
+          items: _activeItems,
           assessmentName: _activeAssessment?.name,
         ),
       ),
       (_) => false,
     );
+  }
+
+  Future<String> _generateCompletionReport() async {
+    final assessment = _activeAssessment;
+    if (assessment == null) {
+      throw StateError('Keine aktive Prüfung vorhanden.');
+    }
+
+    final report = await _reportGenerator.generateAssessmentReport(
+      assessment: assessment,
+      auditor: _activeUserEmail ?? 'Unbekannt',
+      reportVersion: _reportVersion,
+      confidentiality: 'Internal',
+    );
+
+    return report.filePath;
   }
 
   void _startAssessment() {
@@ -137,10 +157,17 @@ class _DatacenterAppState extends State<DatacenterApp> {
                     .map(
                       (e) => ChecklistItem(
                         id: e.id,
+                        domainId: e.domainId,
+                        domainName: e.domainName,
+                        domainDescription: e.domainDescription,
                         title: e.title,
                         description: e.description,
                         riskLevel: e.riskLevel,
-                        isFulfilled: false,
+                        isMandatory: e.isMandatory,
+                        fulfilmentLevel: e.fulfilmentLevel,
+                        note: '',
+                        criteria: List<String>.from(e.criteria),
+                        evidence: <ChecklistEvidence>[],
                       ),
                     )
                     .toList(growable: true),
@@ -222,7 +249,8 @@ class _DatacenterAppState extends State<DatacenterApp> {
     return null;
   }
 
-  Future<String?> _register(String email, String password, String confirmPassword) async {
+  Future<String?> _register(
+      String email, String password, String confirmPassword) async {
     final normalizedMail = email.toLowerCase();
     if (_accounts.containsKey(normalizedMail)) {
       return 'Für diese E-Mail-Adresse existiert bereits ein Konto.';

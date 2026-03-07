@@ -64,20 +64,51 @@ class ExportService {
     await File(csvFindings).writeAsString(
       const ListToCsvConverter().convert([
         ['id', 'controlItemId', 'type', 'severity', 'status', 'title'],
-        ...findings.map((f) => [f.id, f.controlItemId, f.type.name, f.severity.name, f.status.name, f.title]),
+        ...findings.map((f) => [
+              f.id,
+              f.controlItemId,
+              f.type.name,
+              f.severity.name,
+              f.status.name,
+              f.title
+            ]),
       ]),
     );
 
     await File(csvRisks).writeAsString(
       const ListToCsvConverter().convert([
-        ['id', 'findingId', 'likelihood', 'impact', 'score', 'riskClass', 'rationale'],
-        ...risks.map((r) => [r.id, r.findingId, r.likelihood, r.impact, r.score, r.riskClass.name, r.rationale]),
+        [
+          'id',
+          'findingId',
+          'likelihood',
+          'impact',
+          'score',
+          'riskClass',
+          'rationale'
+        ],
+        ...risks.map((r) => [
+              r.id,
+              r.findingId,
+              r.likelihood,
+              r.impact,
+              r.score,
+              r.riskClass.name,
+              r.rationale
+            ]),
       ]),
     );
 
     await File(csvAnswers).writeAsString(
       const ListToCsvConverter().convert([
-        ['id', 'controlItemId', 'scoreType', 'fulfilment', 'maturity', 'answeredBy', 'answeredAt'],
+        [
+          'id',
+          'controlItemId',
+          'scoreType',
+          'fulfilment',
+          'maturity',
+          'answeredBy',
+          'answeredAt'
+        ],
         ...answers.map((a) => [
               a.id,
               a.controlItemId,
@@ -125,8 +156,9 @@ class ExportService {
     pdf.addPage(
       pw.MultiPage(
         build: (_) => [
-          pw.Text('RZ-Checkliste & Risikoanalyse Report',
-              style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+          pw.Text('RZ-Checkliste & Kritikalitätsanalyse Report',
+              style:
+                  pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 8),
           pw.Text('Assessment: ${assessment.name}'),
           pw.Text('Organisation: ${assessment.org}'),
@@ -134,19 +166,27 @@ class ExportService {
           pw.Text('Status: ${assessment.status.name}'),
           pw.Text('Katalogversion: ${assessment.catalogVersion}'),
           pw.SizedBox(height: 16),
-          pw.Text('Executive Summary', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.Text('Executive Summary',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
           pw.Text('Antworten: ${answers.length}'),
-          pw.Text('Findings offen: ${findings.where((f) => f.status.name != 'resolved').length}'),
-          pw.Text('Risiken gesamt: ${risks.length}'),
+          pw.Text(
+              'Findings offen: ${findings.where((f) => f.status.name != 'resolved').length}'),
+          pw.Text('Kritikalitäten gesamt: ${risks.length}'),
           pw.SizedBox(height: 10),
-          pw.Text('Top Risiken', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-          ...topRisks.take(5).map((r) => pw.Text('${r.id}: Score ${r.score} (${r.riskClass.name})')),
+          pw.Text('Top Kritikalitäten',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          ...topRisks.take(5).map((r) =>
+              pw.Text('${r.id}: Score ${r.score} (${r.riskClass.name})')),
           pw.SizedBox(height: 16),
-          pw.Text('Detail Findings', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-          ...findings.take(20).map((f) => pw.Text('${f.title} | ${f.severity.name} | ${f.status.name}')),
+          pw.Text('Detail Findings',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          ...findings.take(20).map((f) =>
+              pw.Text('${f.title} | ${f.severity.name} | ${f.status.name}')),
           pw.SizedBox(height: 16),
-          pw.Text('Evidenzstatus', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-          ...evidence.take(20).map((e) => pw.Text('${e.fileName}: ${e.status.name} (${e.confidentiality})')),
+          pw.Text('Evidenzstatus',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          ...evidence.take(20).map((e) => pw.Text(
+              '${e.fileName}: ${e.status.name} (${e.confidentiality})')),
         ],
       ),
     );
@@ -154,7 +194,8 @@ class ExportService {
     await File(path).writeAsBytes(await pdf.save());
   }
 
-  Future<void> _createEvidenceZip(String zipPath, List<Evidence> entries, Assessment assessment) async {
+  Future<void> _createEvidenceZip(
+      String zipPath, List<Evidence> entries, Assessment assessment) async {
     final archive = Archive();
     final manifest = <Map<String, dynamic>>[];
     for (final e in entries) {
@@ -163,13 +204,16 @@ class ExportService {
         continue;
       }
       final bytes = file.readAsBytesSync();
-      final entryPath = '${assessment.id}/${e.linkedEntityType.name}/${e.linkedEntityId}/${e.fileName}';
+      final entryPath =
+          '${assessment.id}/${e.linkedEntityType.name}/${e.linkedEntityId}/${e.fileName}';
       archive.addFile(ArchiveFile(entryPath, bytes.length, bytes));
       manifest.add(e.toJson());
     }
 
-    final manifestBytes = utf8.encode(jsonEncode({'assessmentId': assessment.id, 'evidence': manifest}));
-    archive.addFile(ArchiveFile('${assessment.id}/manifest.json', manifestBytes.length, manifestBytes));
+    final manifestBytes = utf8.encode(
+        jsonEncode({'assessmentId': assessment.id, 'evidence': manifest}));
+    archive.addFile(ArchiveFile(
+        '${assessment.id}/manifest.json', manifestBytes.length, manifestBytes));
 
     final output = ZipEncoder().encode(archive);
     if (output == null) {

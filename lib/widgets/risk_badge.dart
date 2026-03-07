@@ -17,7 +17,7 @@ class RiskBadge extends StatelessWidget {
         border: Border.all(color: color),
       ),
       child: Text(
-        'Risiko $riskLevel (${riskLabel(riskLevel)})',
+        'Kritikalität $riskLevel (${riskLabel(riskLevel)})',
         style: TextStyle(color: color, fontWeight: FontWeight.w600),
       ),
     );

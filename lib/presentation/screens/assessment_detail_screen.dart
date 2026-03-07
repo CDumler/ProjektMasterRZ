@@ -17,9 +17,11 @@ class AssessmentDetailScreen extends ConsumerWidget {
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           if (snapshot.hasError) {
-            return Scaffold(body: Center(child: Text('Fehler: ${snapshot.error}')));
+            return Scaffold(
+                body: Center(child: Text('Fehler: ${snapshot.error}')));
           }
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         }
 
         final vm = snapshot.data!;
@@ -42,7 +44,8 @@ class AssessmentDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       LinearProgressIndicator(value: progress),
                       const SizedBox(height: 8),
-                      Text('Fortschritt: ${(progress * 100).toStringAsFixed(0)}%'),
+                      Text(
+                          'Fortschritt: ${(progress * 100).toStringAsFixed(0)}%'),
                     ],
                   ),
                 ),
@@ -51,19 +54,24 @@ class AssessmentDetailScreen extends ConsumerWidget {
                 spacing: 8,
                 children: [
                   FilledButton(
-                    onPressed: () => context.push('/assessment/$assessmentId/findings'),
-                    child: Text('Findings (${vm.findings.where((f) => f.status == FindingStatus.open).length})'),
+                    onPressed: () =>
+                        context.push('/assessment/$assessmentId/findings'),
+                    child: Text(
+                        'Findings (${vm.findings.where((f) => f.status == FindingStatus.open).length})'),
                   ),
                   FilledButton(
-                    onPressed: () => context.push('/assessment/$assessmentId/risks'),
-                    child: Text('Risiken (${vm.risks.length})'),
+                    onPressed: () =>
+                        context.push('/assessment/$assessmentId/risks'),
+                    child: Text('Kritikalitäten (${vm.risks.length})'),
                   ),
                   FilledButton(
-                    onPressed: () => context.push('/assessment/$assessmentId/evidence'),
+                    onPressed: () =>
+                        context.push('/assessment/$assessmentId/evidence'),
                     child: Text('Evidenzen (${vm.evidence.length})'),
                   ),
                   OutlinedButton(
-                    onPressed: () => context.push('/assessment/$assessmentId/audit'),
+                    onPressed: () =>
+                        context.push('/assessment/$assessmentId/audit'),
                     child: const Text('Audit-Trail'),
                   ),
                 ],
@@ -74,17 +82,22 @@ class AssessmentDetailScreen extends ConsumerWidget {
                   children: [
                     ListTile(
                       title: const Text('Domänen'),
-                      subtitle: const Text('Technik, Physisch, Betrieb, Netzwerk, Notfall'),
+                      subtitle: const Text(
+                          'Technik, Physisch, Betrieb, Netzwerk, Notfall'),
                       trailing: PopupMenuButton<AssessmentStatus>(
                         onSelected: (status) async {
-                          await ref.read(orchestratorProvider).updateAssessmentStatus(assessmentId, status);
+                          await ref
+                              .read(orchestratorProvider)
+                              .updateAssessmentStatus(assessmentId, status);
                           ref.invalidate(assessmentsProvider);
                           // ignore: use_build_context_synchronously
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(content: Text('Status auf ${status.name} gesetzt')));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content:
+                                  Text('Status auf ${status.name} gesetzt')));
                         },
                         itemBuilder: (_) => AssessmentStatus.values
-                            .map((s) => PopupMenuItem(value: s, child: Text(s.name)))
+                            .map((s) =>
+                                PopupMenuItem(value: s, child: Text(s.name)))
                             .toList(growable: false),
                       ),
                     ),
@@ -93,7 +106,8 @@ class AssessmentDetailScreen extends ConsumerWidget {
                         title: Text(domain.name),
                         subtitle: Text(domain.description),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.push('/assessment/$assessmentId/domain/${domain.id}'),
+                        onTap: () => context.push(
+                            '/assessment/$assessmentId/domain/${domain.id}'),
                       ),
                   ],
                 ),
@@ -110,17 +124,18 @@ class AssessmentDetailScreen extends ConsumerWidget {
                     evidence: vm.evidence,
                   );
                   await ref.read(orchestratorProvider).auditExport(
-                        entityType: EntityType.assessment,
-                        entityId: assessmentId,
-                        payload: {
-                          'json': artifacts.jsonPath,
-                          'pdf': artifacts.pdfPath,
-                          'zip': artifacts.evidenceZipPath,
-                        },
-                      );
+                    entityType: EntityType.assessment,
+                    entityId: assessmentId,
+                    payload: {
+                      'json': artifacts.jsonPath,
+                      'pdf': artifacts.pdfPath,
+                      'zip': artifacts.evidenceZipPath,
+                    },
+                  );
                   // ignore: use_build_context_synchronously
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Export erstellt: ${artifacts.pdfPath}')),
+                    SnackBar(
+                        content: Text('Export erstellt: ${artifacts.pdfPath}')),
                   );
                 },
                 icon: const Icon(Icons.download),

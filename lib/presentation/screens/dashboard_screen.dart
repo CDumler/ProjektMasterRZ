@@ -19,10 +19,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RZ-Checkliste & Risikoanalyse'),
+        title: const Text('RZ-Checkliste & Kritikalitätsanalyse'),
         actions: [
-          IconButton(onPressed: () => context.push('/catalog'), icon: const Icon(Icons.library_books)),
-          IconButton(onPressed: () => context.push('/settings'), icon: const Icon(Icons.settings)),
+          IconButton(
+              onPressed: () => context.push('/catalog'),
+              icon: const Icon(Icons.library_books)),
+          IconButton(
+              onPressed: () => context.push('/settings'),
+              icon: const Icon(Icons.settings)),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -49,10 +53,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: assessmentsAsync.when(
               data: (assessments) {
                 final filtered = assessments
-                    .where((a) => a.name.toLowerCase().contains(_filter) || a.org.toLowerCase().contains(_filter))
+                    .where((a) =>
+                        a.name.toLowerCase().contains(_filter) ||
+                        a.org.toLowerCase().contains(_filter))
                     .toList(growable: false);
                 if (filtered.isEmpty) {
-                  return const Center(child: Text('Keine Assessments vorhanden.'));
+                  return const Center(
+                      child: Text('Keine Assessments vorhanden.'));
                 }
                 return ListView.builder(
                   itemCount: filtered.length,
@@ -60,7 +67,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     final asm = filtered[index];
                     return ListTile(
                       title: Text(asm.name),
-                      subtitle: Text('${asm.org} • ${asm.location} • ${asm.status.name}'),
+                      subtitle: Text(
+                          '${asm.org} • ${asm.location} • ${asm.status.name}'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.push('/assessment/${asm.id}'),
                     );
@@ -90,16 +98,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: name, decoration: const InputDecoration(labelText: 'Name')),
-              TextField(controller: org, decoration: const InputDecoration(labelText: 'Organisation')),
-              TextField(controller: location, decoration: const InputDecoration(labelText: 'Standort')),
-              TextField(controller: role, decoration: const InputDecoration(labelText: 'Verantwortliche Rolle')),
+              TextField(
+                  controller: name,
+                  decoration: const InputDecoration(labelText: 'Name')),
+              TextField(
+                  controller: org,
+                  decoration: const InputDecoration(labelText: 'Organisation')),
+              TextField(
+                  controller: location,
+                  decoration: const InputDecoration(labelText: 'Standort')),
+              TextField(
+                  controller: role,
+                  decoration: const InputDecoration(
+                      labelText: 'Verantwortliche Rolle')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Anlegen')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Anlegen')),
         ],
       ),
     );

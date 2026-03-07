@@ -75,7 +75,7 @@ void main() {
     await tester.tap(find.text('Prüfung mit dieser Checkliste starten'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Zum Profil zurück'));
+    await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Zu bestehender Prüfung'));
     await tester.pumpAndSettle();
