@@ -54,10 +54,15 @@ class ControlRiskService {
         ? _conformityValue(control)
         : _maturityScore(control);
 
+    // Effectiveness is normalized to 0..1 for both scoring models.
+    // Conformity: 0/0.5/1, Maturity: level(0..5)/5.
     final effectiveness = mode == ControlEvaluationMode.modeConformity
         ? assessmentValue
         : _roundTo((assessmentValue / 5.0).clamp(0.0, 1.0), 4);
 
+    // Control-as-Risk rationale:
+    // Impact proxy = criticality (K), Likelihood proxy = control gap (1 - E).
+    // RiskIndex = K * (1 - E) with bounds 0..5.
     final gap = _roundTo((1.0 - effectiveness).clamp(0.0, 1.0), 4);
     final criticality = control.riskLevel.clamp(1, 5).toDouble();
     final riskIndex = _roundTo((criticality * gap).clamp(0.0, 5.0), 2);
@@ -98,9 +103,9 @@ class ControlRiskService {
   }
 
   ControlEvaluationMode _modeFor(ChecklistItem control) {
-    return control.isMandatory
-        ? ControlEvaluationMode.modeConformity
-        : ControlEvaluationMode.modeMaturity;
+    return control.usesMaturityScoring
+        ? ControlEvaluationMode.modeMaturity
+        : ControlEvaluationMode.modeConformity;
   }
 
   double _conformityValue(ChecklistItem control) {
@@ -115,37 +120,7 @@ class ControlRiskService {
   }
 
   double _maturityScore(ChecklistItem control) {
-    final parsed = _tryParseMaturityScore(control.note);
-    if (parsed != null) {
-      return parsed;
-    }
-
-    switch (control.fulfilmentLevel) {
-      case 2:
-        return 5.0;
-      case 1:
-        return 2.5;
-      default:
-        return 0.0;
-    }
-  }
-
-  double? _tryParseMaturityScore(String note) {
-    final match = RegExp(r'([0-5](?:[.,][0-9])?)').firstMatch(note);
-    if (match == null) {
-      return null;
-    }
-    final raw = match.group(1)?.replaceAll(',', '.');
-    if (raw == null) {
-      return null;
-    }
-
-    final parsed = double.tryParse(raw);
-    if (parsed == null) {
-      return null;
-    }
-
-    return _roundTo(parsed.clamp(0.0, 5.0), 2);
+    return control.fulfilmentLevel.clamp(0, 5).toDouble();
   }
 
   double _roundTo(double value, int decimals) {

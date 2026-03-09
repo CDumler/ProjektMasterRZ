@@ -168,16 +168,6 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: () => _onCompletePressed(context),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F766E),
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.assignment_turned_in),
-                    label: const Text('Prüfung abschließen'),
-                  ),
-                  const SizedBox(height: 12),
                 ],
                 FilledButton.icon(
                   onPressed: onOpenChecklist,
@@ -214,6 +204,26 @@ class HomeScreen extends StatelessWidget {
                     'Einstufung: $riskLabel',
                   ],
                 ),
+                if (assessmentName != null && onCompleteAssessment != null) ...[
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => _onCompletePressed(context),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F766E),
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.assignment_turned_in),
+                    label: const Text('Prüfung abschließen'),
+                  ),
+                  const SizedBox(height: 12),
+                  const _PreviewCard(
+                    title: 'Prüfung abschließen',
+                    lines: [
+                      'Beim Abschluss wird automatisch ein PDF-Abschlussbericht erzeugt.',
+                      'Der Bericht kann danach heruntergeladen oder geteilt werden.',
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

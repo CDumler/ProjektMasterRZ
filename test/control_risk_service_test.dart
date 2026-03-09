@@ -10,6 +10,7 @@ void main() {
     required int criticality,
     int fulfilmentLevel = 0,
     String note = '',
+    ChecklistScoringModel scoringModel = ChecklistScoringModel.conformity,
   }) {
     return ChecklistItem(
       id: 'ctrl-1',
@@ -17,6 +18,7 @@ void main() {
       description: 'Description',
       riskLevel: criticality,
       isMandatory: isMandatory,
+      scoringModel: scoringModel,
       fulfilmentLevel: fulfilmentLevel,
       note: note,
     );
@@ -46,14 +48,14 @@ void main() {
     expect(result.riskIndex, 2.0);
   });
 
-  test('MODE_MATURITY: maturity score from note uses score/5 normalization',
+  test('MODE_MATURITY: uses maturity score 0..5 with score/5 normalization',
       () {
     final result = service.evaluateControl(
       buildItem(
         isMandatory: false,
         criticality: 5,
-        fulfilmentLevel: 0,
-        note: 'Reifegrad 3',
+        scoringModel: ChecklistScoringModel.maturity,
+        fulfilmentLevel: 3,
       ),
     );
 
@@ -64,21 +66,21 @@ void main() {
     expect(result.riskIndex, 2.0);
   });
 
-  test('MODE_MATURITY: missing note falls back without throwing', () {
+  test('MODE_MATURITY: supports level-based scoring without note parsing', () {
     final result = service.evaluateControl(
       buildItem(
         isMandatory: false,
         criticality: 3,
-        fulfilmentLevel: 1,
-        note: '',
+        scoringModel: ChecklistScoringModel.maturity,
+        fulfilmentLevel: 2,
       ),
     );
 
     expect(result.modeToken, 'MODE_MATURITY');
-    expect(result.assessmentValue, 2.5);
-    expect(result.effectiveness, 0.5);
-    expect(result.gap, 0.5);
-    expect(result.riskIndex, 1.5);
+    expect(result.assessmentValue, 2.0);
+    expect(result.effectiveness, 0.4);
+    expect(result.gap, 0.6);
+    expect(result.riskIndex, 1.8);
   });
 
   test('riskIndex remains clamped to range 0..5 and rounded', () {
@@ -86,13 +88,13 @@ void main() {
       buildItem(
         isMandatory: false,
         criticality: 9,
-        fulfilmentLevel: 0,
-        note: '4.2',
+        scoringModel: ChecklistScoringModel.maturity,
+        fulfilmentLevel: 4,
       ),
     );
 
     expect(result.riskIndex, inInclusiveRange(0.0, 5.0));
-    expect(result.riskIndex, 0.8);
+    expect(result.riskIndex, 1.0);
   });
 
   test('maturity level labels are defined from 0 to 5', () {

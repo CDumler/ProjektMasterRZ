@@ -1,6 +1,405 @@
 import 'package:flutter/material.dart';
 import 'package:rz_checkliste_risikoanalyse/models/checklist_item.dart';
 
+const Map<String, List<String>> _controlReferenceMapping =
+    <String, List<String>>{
+  'A-CTRL-01': <String>[
+    'EN 50600-2-2 6.2.6 / 6.3.4',
+    'ISO/IEC 27002:2022 8.14',
+    'NIST SP 800-53 PE-9(1)',
+  ],
+  'A-CTRL-02': <String>[
+    'EN 50600-2-2 6.2 / 6.2.5 / 6.2.6',
+    'BSI INF.2.A13',
+    'NIST SP 800-53 PE-11',
+  ],
+  'A-CTRL-03': <String>[
+    'BSI INF.2.A14',
+    'NIST SP 800-53 PE-11',
+    'EN 50600-2-2 6.2',
+  ],
+  'A-CTRL-04': <String>[
+    'BSI INF.2.A19',
+    'NIST SP 800-53 CP-4',
+    'ISO 22301:2019 8.5',
+  ],
+  'A-CTRL-05': <String>[
+    'EN 50600-2-3 / ISO/IEC 22237-4 6.2.2 / 6.4',
+    'BSI INF.2.A16',
+    'NIST SP 800-53 PE-14',
+  ],
+  'A-CTRL-06': <String>[
+    'EN 50600-2-3 / ISO/IEC 22237-4 5.2.9 / 6.2.2',
+    'BSI INF.2.A16',
+    'ISO/IEC 27002:2022 7.8',
+  ],
+  'A-CTRL-07': <String>[
+    'EN 50600-2-3 / ISO/IEC 22237-4 6.3 / 6.4',
+    'ISO/IEC 27002:2022 8.6',
+    'BSI INF.2.A16',
+  ],
+  'A-CTRL-08': <String>[
+    'EN 50600-2-5 8.1.3',
+    'BSI INF.2.A8',
+    'BSI INF.2.A17',
+  ],
+  'A-CTRL-09': <String>[
+    'EN 50600-2-5 8.1.4 / 8.2',
+    'BSI INF.2.A9',
+    'NIST SP 800-53 PE-13',
+  ],
+  'A-CTRL-10': <String>[
+    'EN 50600-3-1 7.2 / Annex B.2',
+    'BSI INF.2.A10',
+    'ISO/IEC 27002:2022 7.13',
+  ],
+  'A-CTRL-11': <String>[
+    'ISO/IEC 22237-2 8.9 / 10.1',
+    'BSI INF.2.A11 / A29',
+    'NIST SP 800-53 PE-15',
+  ],
+  'A-CTRL-12': <String>[
+    'ISO/IEC 22237-2 8.7 / 8.10 / 8.11 / 8.13',
+    'BSI INF.2.A7',
+    'ISO/IEC 27002:2022 7.8',
+  ],
+  'A-CTRL-13': <String>[
+    'ISO/IEC 22237-2 5.3.3 / 8.8 / 8.9 / 9.4 / 9.5',
+    'BSI INF.1.A15',
+    'BSI INF.2.A29',
+  ],
+  'A-CTRL-14': <String>[
+    'ISO/IEC 27001:2022 5.3 / 7.2',
+    'BSI ORP.1.A2',
+    'BSI ORP.2.A15',
+  ],
+  'A-CTRL-15': <String>[
+    'BSI INF.2.A10 / INF.12.A12',
+    'ISO/IEC 27002:2022 7.13',
+    'NIST SP 800-53 MA-2',
+  ],
+  'A-CTRL-16': <String>[
+    'EN 50600-3-1 7.2 / 7.4',
+    'BSI INF.12.A12',
+    'NIST SP 800-53 MA-2',
+  ],
+  'A-CTRL-17': <String>[
+    'BSI INF.2.A5',
+    'ISO/IEC 22237-4 8.2 / 8.3 / Annex A',
+    'NIST SP 800-53 PE-14',
+  ],
+  'B-CTRL-01': <String>[
+    'ISO/IEC 27002:2022 7.2',
+    'NIST SP 800-53 PE-2',
+    'BSI INF.2.A6',
+  ],
+  'B-CTRL-02': <String>[
+    'EN 50600-2-5 6.1.2 / 6.1.4',
+    'NIST SP 800-53 PE-3',
+    'ISO/IEC 27002:2022 7.2',
+  ],
+  'B-CTRL-03': <String>[
+    'ISO/IEC 27002:2022 5.18',
+    'ISO/IEC 27001:2022 5.3',
+    'NIST SP 800-53 PE-2',
+  ],
+  'B-CTRL-04': <String>[
+    'ISO/IEC 27002:2022 7.1',
+    'EN 50600-2-5 5.3 / 6.2',
+    'BSI INF.2.A12',
+  ],
+  'B-CTRL-05': <String>[
+    'EN 50600-2-5 6.2 / 7',
+    'ISO/IEC 27002:2022 7.1 / 7.2',
+    'BSI INF.2.A12',
+  ],
+  'B-CTRL-06': <String>[
+    'NIST SP 800-53 PE-16',
+    'EN 50600-2-5 6.2.4 / 6.2.7',
+    'ISO/IEC 27002:2022 7.1 / 7.2',
+  ],
+  'B-CTRL-07': <String>[
+    'ISO/IEC 27002:2022 7.4',
+    'NIST SP 800-53 PE-6',
+    'EN 50600-2-5 11.2.2 / 11.2.5',
+  ],
+  'B-CTRL-08': <String>[
+    'ISO/IEC 27002:2022 5.33',
+    'ISO/IEC 27002:2022 8.3',
+    'NIST SP 800-53 AC-6',
+  ],
+  'B-CTRL-09': <String>[
+    'ISO/IEC 27002:2022 5.34',
+    'ISO/IEC 27002:2022 8.10',
+    'BSI CON.6.A2',
+  ],
+  'B-CTRL-10': <String>[
+    'NIST SP 800-53 PE-8',
+    'ISO/IEC 22237-6 6.2.6',
+    'BSI INF.1.A26',
+  ],
+  'B-CTRL-11': <String>[
+    'ISO/IEC 27002:2022 5.19 / 5.20',
+    'NIST SP 800-53 PS-7',
+    'BSI ORP.1.A14',
+  ],
+  'B-CTRL-12': <String>[
+    'ISO/IEC 27002:2022 5.15 / 7.2',
+    'NIST SP 800-53 PE-16',
+    'BSI INF.1.A26',
+  ],
+  'B-CTRL-13': <String>[
+    'ISO/IEC 27002:2022 7.1 / 7.2',
+    'NIST SP 800-53 PE-3 / PE-18',
+    'EN 50600-2-5 6.2 / 7',
+  ],
+  'B-CTRL-14': <String>[
+    'ISO/IEC 27002:2022 7.2',
+    'NIST SP 800-53 PE-3(1)',
+    'BSI INF.2.A6 / INF.2.A12',
+  ],
+  'B-CTRL-15': <String>[
+    'EN 50600-2-5 6.1.4 / 6.2',
+    'NIST SP 800-53 PE-3',
+    'ISO/IEC 27002:2022 7.2',
+  ],
+  'C-CTRL-01': <String>[
+    'ISO/IEC 27002:2022 8.16',
+    'NIST SP 800-53 SI-4',
+    'EN 50600-3-1 6 / 7',
+  ],
+  'C-CTRL-02': <String>[
+    'ISO/IEC 27002:2022 8.16',
+    'NIST SP 800-53 SI-4 / IR-5',
+    'EN 50600-3-1 7.3',
+  ],
+  'C-CTRL-03': <String>[
+    'ISO/IEC 27002:2022 5.24 / 5.26',
+    'NIST SP 800-53 IR-4 / IR-8',
+    'ISO 22301:2019 8.4',
+  ],
+  'C-CTRL-04': <String>[
+    'ISO/IEC 27002:2022 5.24 / 5.25 / 5.26',
+    'NIST SP 800-53 IR-4',
+    'BSI DER.4',
+  ],
+  'C-CTRL-05': <String>[
+    'ISO/IEC 27002:2022 8.32',
+    'NIST SP 800-53 CM-3 / CM-4',
+    'BSI OPS.1.1.4.A3',
+  ],
+  'C-CTRL-06': <String>[
+    'ISO/IEC 27002:2022 8.8',
+    'NIST SP 800-53 MA-2',
+    'EN 50600-3-1 7.2',
+  ],
+  'C-CTRL-07': <String>[
+    'ISO/IEC 27002:2022 8.6',
+    'EN 50600-2-3 6.3 / 6.4',
+    'NIST SP 800-53 PE-14',
+  ],
+  'C-CTRL-08': <String>[
+    'EN 50600-2-3 6.3 / 6.4',
+    'ISO/IEC 27002:2022 8.6',
+    'BSI INF.2.A16',
+  ],
+  'C-CTRL-09': <String>[
+    'ISO/IEC 27002:2022 8.6',
+    'ISO 22301:2019 8.3',
+    'EN 50600-3-1 7.1',
+  ],
+  'C-CTRL-10': <String>[
+    'ISO/IEC 27002:2022 5.37',
+    'NIST SP 800-53 CM-8 / PL-2',
+    'BSI OPS.1.1.1.A1',
+  ],
+  'C-CTRL-11': <String>[
+    'ISO/IEC 27002:2022 8.9 / 8.32',
+    'NIST SP 800-53 CM-8',
+    'BSI OPS.1.1.1.A6',
+  ],
+  'C-CTRL-12': <String>[
+    'ISO/IEC 27001:2022 9.1',
+    'ISO 22301:2019 9.1',
+    'NIST SP 800-53 PM-6',
+  ],
+  'C-CTRL-13': <String>[
+    'ISO/IEC 27001:2022 9.1 / 10.1',
+    'ISO 22301:2019 9.3 / 10.1',
+    'NIST SP 800-53 CA-7',
+  ],
+  'C-CTRL-14': <String>[
+    'ISO/IEC 27002:2022 5.19 / 5.20',
+    'NIST SP 800-53 SR-3',
+    'BSI ORP.1.A14',
+  ],
+  'C-CTRL-15': <String>[
+    'ISO/IEC 27002:2022 5.22 / 5.23',
+    'NIST SP 800-53 PS-7 / PE-16',
+    'BSI INF.1.A26',
+  ],
+  'C-CTRL-16': <String>[
+    'ISO/IEC 27002:2022 5.22',
+    'ISO/IEC 27001:2022 9.3',
+    'NIST SP 800-53 SR-6',
+  ],
+  'C-CTRL-17': <String>[
+    'ISO/IEC 27002:2022 8.8',
+    'NIST SP 800-53 SI-2',
+    'BSI OPS.1.1.3.A16',
+  ],
+  'D-CTRL-01': <String>[
+    'EN 50600-2-4 6.2 / 6.3',
+    'ISO/IEC 27002:2022 8.21',
+    'NIST SP 800-53 SC-5',
+  ],
+  'D-CTRL-02': <String>[
+    'NIST SP 800-53 CP-8',
+    'ISO/IEC 27002:2022 8.21',
+    'EN 50600-2-4 6.3',
+  ],
+  'D-CTRL-03': <String>[
+    'EN 50600-2-4 6.2 / 6.3',
+    'NIST SP 800-53 PE-9(1)',
+    'ISO/IEC 22237-5 6.2',
+  ],
+  'D-CTRL-04': <String>[
+    'ISO/IEC 27002:2022 8.21',
+    'NIST SP 800-53 SC-5',
+    'EN 50600-2-4 6.3',
+  ],
+  'D-CTRL-05': <String>[
+    'NIST SP 800-53 CP-8 / SC-24',
+    'ISO/IEC 27002:2022 8.21',
+    'EN 50600-2-4 6.3',
+  ],
+  'D-CTRL-06': <String>[
+    'ISO/IEC 27002:2022 5.37 / 8.9',
+    'NIST SP 800-53 CM-8',
+    'BSI OPS.1.1.1.A1',
+  ],
+  'D-CTRL-07': <String>[
+    'ISO/IEC 27002:2022 8.22',
+    'NIST SP 800-53 SC-7',
+    'BSI NET.1.1.A2',
+  ],
+  'D-CTRL-08': <String>[
+    'ISO/IEC 27002:2022 8.20 / 8.22',
+    'NIST SP 800-53 SC-7',
+    'BSI NET.1.1.A3',
+  ],
+  'D-CTRL-09': <String>[
+    'ISO/IEC 27002:2022 8.2 / 8.18 / 8.20',
+    'NIST SP 800-53 AC-17 / AC-6',
+    'BSI OPS.1.1.4.A8',
+  ],
+  'D-CTRL-10': <String>[
+    'ISO/IEC 27002:2022 8.9',
+    'EN 50600-2-4 6.4',
+    'NIST SP 800-53 CM-8',
+  ],
+  'D-CTRL-11': <String>[
+    'ISO/IEC 27002:2022 8.32',
+    'NIST SP 800-53 CM-3',
+    'BSI OPS.1.1.4.A3',
+  ],
+  'D-CTRL-12': <String>[
+    'EN 50600-2-4 6.2 / 6.3',
+    'ISO/IEC 27002:2022 8.21',
+    'NIST SP 800-53 PE-9(1)',
+  ],
+  'D-CTRL-13': <String>[
+    'ISO/IEC 27002:2022 8.20 / 8.21',
+    'NIST SP 800-53 AC-17',
+    'BSI OPS.1.1.4.A8',
+  ],
+  'D-CTRL-14': <String>[
+    'ISO/IEC 27002:2022 8.2 / 8.5',
+    'NIST SP 800-53 IA-2 / AC-6',
+    'BSI OPS.1.1.4.A9',
+  ],
+  'D-CTRL-15': <String>[
+    'ISO/IEC 27002:2022 5.30 / 8.2',
+    'NIST SP 800-53 AC-2(4)',
+    'ISO 22301:2019 8.4',
+  ],
+  'D-CTRL-16': <String>[
+    'ISO/IEC 27002:2022 8.13 / 8.9',
+    'NIST SP 800-53 CP-9',
+    'BSI CON.3.A2',
+  ],
+  'E-CTRL-01': <String>[
+    'ISO 22301:2019 5.3 / 5.4',
+    'ISO/IEC 27001:2022 5.1 / 5.3',
+    'BSI CON.1.A1',
+  ],
+  'E-CTRL-02': <String>[
+    'ISO 22301:2019 7.2 / 7.3',
+    'NIST SP 800-53 CP-2',
+    'BSI DER.2.A1',
+  ],
+  'E-CTRL-03': <String>[
+    'ISO 22301:2019 8.2 / 8.4',
+    'ISO/IEC 27031 6 / 7',
+    'NIST SP 800-53 CP-2 / CP-4',
+  ],
+  'E-CTRL-04': <String>[
+    'ISO 22301:2019 8.3 / 8.4',
+    'ISO/IEC 27031 7',
+    'NIST SP 800-53 CP-2',
+  ],
+  'E-CTRL-05': <String>[
+    'ISO/IEC 27031 7 / 8',
+    'NIST SP 800-53 CP-7 / CP-8',
+    'ISO 22301:2019 8.4',
+  ],
+  'E-CTRL-06': <String>[
+    'ISO 22301:2019 8.5',
+    'NIST SP 800-53 CP-4',
+    'ISO/IEC 27031 8',
+  ],
+  'E-CTRL-07': <String>[
+    'ISO 22301:2019 8.2 / 8.3',
+    'ISO/IEC 27031 7.3',
+    'NIST SP 800-53 CP-2',
+  ],
+  'E-CTRL-08': <String>[
+    'ISO 22301:2019 8.3 / 8.4',
+    'ISO/IEC 27031 7.4',
+    'NIST SP 800-53 CP-2(2)',
+  ],
+  'E-CTRL-09': <String>[
+    'ISO 22301:2019 8.4 / 8.5',
+    'NIST SP 800-53 CP-10',
+    'BSI DER.4.A3',
+  ],
+  'E-CTRL-10': <String>[
+    'ISO 22301:2019 8.4',
+    'NIST SP 800-53 CP-10',
+    'ISO/IEC 27031 8.4',
+  ],
+  'E-CTRL-11': <String>[
+    'ISO 22301:2019 7.5 / 8.5',
+    'NIST SP 800-53 CP-2',
+    'BSI DER.4.A4',
+  ],
+  'E-CTRL-12': <String>[
+    'ISO 22301:2019 8.4',
+    'NIST SP 800-53 IR-8 / CP-2',
+    'BSI DER.2.A3',
+  ],
+  'E-CTRL-13': <String>[
+    'ISO 22301:2019 8.4.3 / 8.4.4',
+    'ISO/IEC 27035-1 8',
+    'NIST SP 800-53 IR-4',
+  ],
+  'E-CTRL-14': <String>[
+    'ISO/IEC 27002:2022 8.13',
+    'NIST SP 800-53 CP-9',
+    'BSI CON.3.A2',
+  ],
+};
+
 class AssessmentSetupScreen extends StatefulWidget {
   const AssessmentSetupScreen({
     super.key,
@@ -37,9 +436,13 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
             title: e.title,
             description: e.description,
             riskLevel: e.riskLevel,
-            isMandatory: e.isMandatory,
+            scoringModel: e.scoringModel,
             isFulfilled: false,
             criteria: List<String>.from(e.criteria),
+            anchorCriteria: <int, List<String>>{
+              for (final entry in e.anchorCriteria.entries)
+                entry.key: List<String>.from(entry.value),
+            },
           ),
         )
         .toList(growable: true);
@@ -125,6 +528,46 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
     });
   }
 
+  Future<void> _showControlMapping(ChecklistItem item) async {
+    final references = _controlReferenceMapping[item.id] ?? const <String>[];
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Control Mapping ${item.id}'),
+        content: SizedBox(
+          width: 480,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.title,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              if (references.isEmpty)
+                const Text('Keine Referenzen für dieses Control hinterlegt.')
+              else
+                ...references.map(
+                  (reference) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text('• $reference'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Schließen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _start() {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -191,7 +634,6 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
                 _buildSectionTitle(
                   context,
                   title: 'Aktive Checklistenpunkte',
-                  icon: Icons.fact_check_rounded,
                   color: const Color(0xFF0F766E),
                 ),
                 const SizedBox(height: 8),
@@ -205,7 +647,6 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
                 _buildSectionTitle(
                   context,
                   title: 'Deaktivierte Punkte',
-                  icon: Icons.pause_circle_outline_rounded,
                   color: const Color(0xFF64748B),
                 ),
                 const SizedBox(height: 8),
@@ -239,30 +680,19 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
   Widget _buildSectionTitle(
     BuildContext context, {
     required String title,
-    required IconData icon,
     required Color color,
   }) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 19),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-      ],
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w800,
+          ),
     );
   }
 
   Widget _buildActiveDomainCard(_DomainGroup group) {
     final style = _styleForDomain(group.domainId);
-    final mandatoryItems =
-        group.items.where((item) => item.isMandatory).toList(growable: false);
-    final optionalItems =
-        group.items.where((item) => !item.isMandatory).toList(growable: false);
 
     return _buildDomainPanel(
       panelKey: 'active:${group.domainId}',
@@ -275,38 +705,9 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
           value: '${group.items.length}',
           color: style.accent,
         ),
-        _DomainStatChip(
-          label: 'Pflicht',
-          value: '${mandatoryItems.length}',
-          color: const Color(0xFF991B1B),
-        ),
-        _DomainStatChip(
-          label: 'Optional',
-          value: '${optionalItems.length}',
-          color: const Color(0xFF166534),
-        ),
       ],
       childWidgets: [
-        if (mandatoryItems.isNotEmpty) ...[
-          _SectionHeader(
-            title: 'Pflichtpunkte',
-            color: const Color(0xFF991B1B),
-            count: mandatoryItems.length,
-          ),
-          const SizedBox(height: 6),
-          ...mandatoryItems
-              .map((item) => _buildActiveItemCard(item, style: style)),
-        ],
-        if (optionalItems.isNotEmpty) ...[
-          _SectionHeader(
-            title: 'Optionale Punkte',
-            color: const Color(0xFF065F46),
-            count: optionalItems.length,
-          ),
-          const SizedBox(height: 6),
-          ...optionalItems
-              .map((item) => _buildActiveItemCard(item, style: style)),
-        ],
+        ...group.items.map((item) => _buildActiveItemCard(item, style: style)),
         const SizedBox(height: 6),
       ],
     );
@@ -314,10 +715,6 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
 
   Widget _buildInactiveDomainCard(_DomainGroup group) {
     final style = _styleForDomain(group.domainId);
-    final mandatoryItems =
-        group.items.where((item) => item.isMandatory).toList(growable: false);
-    final optionalItems =
-        group.items.where((item) => !item.isMandatory).toList(growable: false);
 
     return _buildDomainPanel(
       panelKey: 'inactive:${group.domainId}',
@@ -332,26 +729,8 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
         ),
       ],
       childWidgets: [
-        if (mandatoryItems.isNotEmpty) ...[
-          _SectionHeader(
-            title: 'Pflichtpunkte',
-            color: const Color(0xFF991B1B),
-            count: mandatoryItems.length,
-          ),
-          const SizedBox(height: 6),
-          ...mandatoryItems
-              .map((item) => _buildInactiveItemCard(item, style: style)),
-        ],
-        if (optionalItems.isNotEmpty) ...[
-          _SectionHeader(
-            title: 'Optionale Punkte',
-            color: const Color(0xFF065F46),
-            count: optionalItems.length,
-          ),
-          const SizedBox(height: 6),
-          ...optionalItems
-              .map((item) => _buildInactiveItemCard(item, style: style)),
-        ],
+        ...group.items
+            .map((item) => _buildInactiveItemCard(item, style: style)),
         const SizedBox(height: 6),
       ],
     );
@@ -476,50 +855,74 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: style.border.withValues(alpha: 0.9)),
         ),
-        child: ListTile(
-          title: Text(item.title),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text(
-                item.description,
-                textAlign: TextAlign.justify,
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: style.accent.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: _editMode ? () => _editItemDialog(item) : null,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(item.title)),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Kritikalität ${item.riskLevel}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        IconButton(
+                          tooltip: 'Control Mapping anzeigen',
+                          onPressed: () => _showControlMapping(item),
+                          icon: const Icon(Icons.info_outline),
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(
+                              width: 28, height: 28),
+                        ),
+                        IconButton(
+                          tooltip: 'Aus Liste entfernen',
+                          onPressed: () => _removeFromChecklist(item),
+                          icon: const Icon(Icons.remove_circle,
+                              color: Colors.red),
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(
+                              width: 28, height: 28),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                child: Text(
-                  item.id,
-                  style: TextStyle(
-                    color: style.accent,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
+                const SizedBox(height: 6),
+                Text(
+                  item.description,
+                  textAlign: TextAlign.justify,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: style.accent.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    item.id,
+                    style: TextStyle(
+                      color: style.accent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          trailing: Wrap(
-            spacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                'Kritikalität ${item.riskLevel}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              IconButton(
-                tooltip: 'Aus Liste entfernen',
-                onPressed: () => _removeFromChecklist(item),
-                icon: const Icon(Icons.remove_circle, color: Colors.red),
-              ),
-            ],
-          ),
-          onTap: _editMode ? () => _editItemDialog(item) : null,
         ),
       ),
     );
@@ -537,15 +940,54 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFCBD5E1)),
         ),
-        child: ListTile(
-          title: Text(
-            item.title,
-            style: TextStyle(color: Colors.grey.shade700),
-          ),
-          subtitle: Column(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.title,
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Kritikalität ${item.riskLevel}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Control Mapping anzeigen',
+                        onPressed: () => _showControlMapping(item),
+                        icon: const Icon(Icons.info_outline),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 28, height: 28),
+                      ),
+                      IconButton(
+                        tooltip: 'Zur Liste hinzufügen',
+                        onPressed: () => _restoreToChecklist(item),
+                        icon: const Icon(Icons.add_circle, color: Colors.green),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 28, height: 28),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
               Text(
                 item.description,
                 textAlign: TextAlign.justify,
@@ -568,11 +1010,6 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
                 ),
               ),
             ],
-          ),
-          trailing: IconButton(
-            tooltip: 'Zur Liste hinzufügen',
-            onPressed: () => _restoreToChecklist(item),
-            icon: const Icon(Icons.add_circle, color: Colors.green),
           ),
         ),
       ),
@@ -624,45 +1061,6 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
           icon: Icons.layers_rounded,
         );
     }
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.color,
-    required this.count,
-  });
-
-  final String title;
-  final Color color;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 24,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$title ($count)',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -753,7 +1151,6 @@ class _ChecklistItemDialogState extends State<_ChecklistItemDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late int _riskLevel;
-  late bool _isMandatory;
 
   @override
   void initState() {
@@ -763,7 +1160,6 @@ class _ChecklistItemDialogState extends State<_ChecklistItemDialog> {
     _descriptionController =
         TextEditingController(text: widget.initialItem?.description ?? '');
     _riskLevel = widget.initialItem?.riskLevel ?? 3;
-    _isMandatory = widget.initialItem?.isMandatory ?? true;
   }
 
   @override
@@ -787,10 +1183,17 @@ class _ChecklistItemDialogState extends State<_ChecklistItemDialog> {
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       riskLevel: _riskLevel,
-      isMandatory: _isMandatory,
+      scoringModel:
+          widget.initialItem?.scoringModel ?? ChecklistScoringModel.conformity,
       fulfilmentLevel: widget.initialItem?.fulfilmentLevel ?? 0,
       criteria:
           List<String>.from(widget.initialItem?.criteria ?? const <String>[]),
+      anchorCriteria: <int, List<String>>{
+        for (final entry in (widget.initialItem?.anchorCriteria ??
+                const <int, List<String>>{})
+            .entries)
+          entry.key: List<String>.from(entry.value),
+      },
     );
 
     Navigator.pop(context, model);
@@ -830,17 +1233,6 @@ class _ChecklistItemDialogState extends State<_ChecklistItemDialog> {
                       DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
                 ),
                 onChanged: (value) => setState(() => _riskLevel = value ?? 3),
-              ),
-              const SizedBox(height: 4),
-              SwitchListTile(
-                value: _isMandatory,
-                onChanged: (value) => setState(() => _isMandatory = value),
-                title: const Text('Pflichtpunkt'),
-                subtitle: Text(
-                  _isMandatory
-                      ? 'Dieser Punkt muss zwingend geprüft werden.'
-                      : 'Dieser Punkt ist optional.',
-                ),
               ),
             ],
           ),

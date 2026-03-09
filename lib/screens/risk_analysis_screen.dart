@@ -31,12 +31,6 @@ class RiskAnalysisScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _ViewPositionCard(
-            screenNumber: 3,
-            title: 'Global Risk Overview',
-            hint: 'Gesamtbild über Risiko-Score, Klasse und Coverage',
-          ),
-          const SizedBox(height: 12),
           _GlobalOverviewCard(total: total),
           const SizedBox(height: 14),
           Text(
@@ -75,24 +69,6 @@ class RiskAnalysisScreen extends StatelessWidget {
                   ),
                   title: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: style.accent.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          domain.domainId.isEmpty ? '-' : domain.domainId,
-                          style: TextStyle(
-                            color: style.accent,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           domain.domainId.isEmpty
@@ -154,11 +130,21 @@ class RiskAnalysisScreen extends StatelessWidget {
                 final risk = entry.value;
                 return Card(
                   child: ListTile(
-                    leading: CircleAvatar(
-                      radius: 14,
+                    leading: Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFD1D5DB)),
+                      ),
                       child: Text(
                         '$rank',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          color: Color(0xFF374151),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     title: Text(risk.control.title),
@@ -208,24 +194,35 @@ class DomainRiskScreen extends StatelessWidget {
 
     final sorted = domain.controls.toList()
       ..sort((a, b) => b.riskIndex.compareTo(a.riskIndex));
-    final notFulfilled =
-        sorted.where((risk) => risk.control.fulfilmentLevel == 0).toList();
-    final partiallyFulfilled =
-        sorted.where((risk) => risk.control.fulfilmentLevel == 1).toList();
-    final fulfilled =
-        sorted.where((risk) => risk.control.fulfilmentLevel == 2).toList();
+    final rankByControlId = <String, int>{
+      for (final entry in sorted.asMap().entries)
+        entry.value.control.id: entry.key + 1,
+    };
+    final notFulfilled = sorted.where((risk) {
+      if (risk.control.usesMaturityScoring) {
+        return risk.control.fulfilmentLevel <= 1;
+      }
+      return risk.control.fulfilmentLevel == 0;
+    }).toList();
+    final partiallyFulfilled = sorted.where((risk) {
+      if (risk.control.usesMaturityScoring) {
+        final level = risk.control.fulfilmentLevel;
+        return level >= 2 && level < 4;
+      }
+      return risk.control.fulfilmentLevel == 1;
+    }).toList();
+    final fulfilled = sorted.where((risk) {
+      if (risk.control.usesMaturityScoring) {
+        return risk.control.fulfilmentLevel >= 4;
+      }
+      return risk.control.fulfilmentLevel == 2;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Kritikalitätsanalyse · Domain')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _ViewPositionCard(
-            screenNumber: 2,
-            title: 'Domain Risk Overview',
-            hint: 'Priorisierte Sicht auf Risiken innerhalb einer Domain',
-          ),
-          const SizedBox(height: 12),
           _ScoreCard(
             title: domain.domainId.isEmpty
                 ? 'Risikoübersicht · ${domain.domainName}'
@@ -235,40 +232,9 @@ class DomainRiskScreen extends StatelessWidget {
             subtitle:
                 '${domain.domainDescription}\ncoverage: ${_formatCoverage(domain.coverage)}',
           ),
-          const SizedBox(height: 10),
-          Text(
-            'Control Risk Detail (Domain-intern priorisiert)',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          ...sorted.asMap().entries.map((entry) {
-            final rank = entry.key + 1;
-            final risk = entry.value;
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: CircleAvatar(
-                  radius: 14,
-                  child: Text(
-                    '$rank',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                title: Text(risk.control.title),
-                subtitle: Text(
-                  'risk_index: ${risk.riskIndex.toStringAsFixed(2)} · risk_class: ${risk.riskClass}\nStatus: ${risk.mode} | ${risk.assessmentDisplay}',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _replaceWith(
-                  context,
-                  ControlRiskScreen(items: items, controlId: risk.control.id),
-                ),
-              ),
-            );
-          }),
           const SizedBox(height: 6),
           Text(
-            'Kontrollen nach Erfüllungsstatus',
+            'Kontrollen nach Erfüllungsstatus (domain-intern priorisiert)',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -277,29 +243,21 @@ class DomainRiskScreen extends StatelessWidget {
             color: const Color(0xFFB91C1C),
             controls: notFulfilled,
             items: items,
+            rankByControlId: rankByControlId,
           ),
           _FulfilmentControlsSection(
             title: 'Teilweise erfüllt',
             color: const Color(0xFFCA8A04),
             controls: partiallyFulfilled,
             items: items,
+            rankByControlId: rankByControlId,
           ),
           _FulfilmentControlsSection(
             title: 'Erfüllt',
             color: const Color(0xFF15803D),
             controls: fulfilled,
             items: items,
-          ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.tonal(
-              onPressed: () => _replaceWith(
-                context,
-                RiskAnalysisScreen(items: items),
-              ),
-              child: const Text('Global Risk Overview'),
-            ),
+            rankByControlId: rankByControlId,
           ),
         ],
       ),
@@ -313,12 +271,14 @@ class _FulfilmentControlsSection extends StatelessWidget {
     required this.color,
     required this.controls,
     required this.items,
+    required this.rankByControlId,
   });
 
   final String title;
   final Color color;
   final List<_ControlRiskResult> controls;
   final List<ChecklistItem> items;
+  final Map<String, int> rankByControlId;
 
   @override
   Widget build(BuildContext context) {
@@ -352,22 +312,59 @@ class _FulfilmentControlsSection extends StatelessWidget {
                 ),
               )
             else
-              ...controls.map(
-                (risk) => ListTile(
-                  title: Text(risk.control.title),
-                  subtitle: Text(
-                    'risk_index: ${risk.riskIndex.toStringAsFixed(2)} · risk_class: ${risk.riskClass}\nStatus: ${risk.mode} | ${risk.assessmentDisplay}',
+              ...controls.map((risk) {
+                final rank = rankByControlId[risk.control.id];
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: color.withValues(alpha: 0.35)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x12000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
                   ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _replaceWith(
-                    context,
-                    ControlRiskScreen(
-                      items: items,
-                      controlId: risk.control.id,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+                    leading: rank == null
+                        ? null
+                        : Container(
+                            width: 28,
+                            height: 28,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  Border.all(color: const Color(0xFFD1D5DB)),
+                            ),
+                            child: Text(
+                              '$rank',
+                              style: const TextStyle(
+                                color: Color(0xFF374151),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                    title: Text(risk.control.title),
+                    subtitle: Text(
+                      'risk_index: ${risk.riskIndex.toStringAsFixed(2)} · risk_class: ${risk.riskClass}\nStatus: ${risk.mode} | ${risk.assessmentDisplay}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _replaceWith(
+                      context,
+                      ControlRiskScreen(
+                        items: items,
+                        controlId: risk.control.id,
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              }),
           ],
         ),
       ),
@@ -403,12 +400,6 @@ class ControlRiskScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _ViewPositionCard(
-            screenNumber: 1,
-            title: 'Control Risk Detail',
-            hint: 'Detaillierte Bewertung einer einzelnen Control',
-          ),
-          const SizedBox(height: 12),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(14),
@@ -476,65 +467,6 @@ class ControlRiskScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton(
-                onPressed: () => _replaceWith(
-                  context,
-                  DomainRiskScreen(
-                    items: items,
-                    domainId: control.domainId,
-                  ),
-                ),
-                child: const Text('Zur Domain-Übersicht'),
-              ),
-              FilledButton.tonal(
-                onPressed: () => _replaceWith(
-                  context,
-                  RiskAnalysisScreen(items: items),
-                ),
-                child: const Text('Gesamtübersicht'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ViewPositionCard extends StatelessWidget {
-  const _ViewPositionCard({
-    required this.screenNumber,
-    required this.title,
-    required this.hint,
-  });
-
-  final int screenNumber;
-  final String title;
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Aktuelle Ansicht: Screen $screenNumber · $title',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(hint),
         ],
       ),
     );
@@ -1002,10 +934,14 @@ List<_ControlRiskResult> _buildAllCatalogRisks(
       title: catalogItem.title,
       description: catalogItem.description,
       riskLevel: catalogItem.riskLevel,
-      isMandatory: catalogItem.isMandatory,
+      scoringModel: catalogItem.scoringModel,
       fulfilmentLevel: active.fulfilmentLevel,
       note: active.note,
       criteria: List<String>.from(catalogItem.criteria),
+      anchorCriteria: <int, List<String>>{
+        for (final entry in catalogItem.anchorCriteria.entries)
+          entry.key: List<String>.from(entry.value),
+      },
       evidence: List<ChecklistEvidence>.from(active.evidence),
     );
   }).toList(growable: false);

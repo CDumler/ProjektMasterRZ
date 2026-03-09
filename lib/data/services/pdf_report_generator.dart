@@ -570,6 +570,15 @@ class PdfReportGenerator {
   }
 
   static String _statusFor(ChecklistItem item) {
+    if (item.usesMaturityScoring) {
+      if (item.fulfilmentLevel >= 4) {
+        return 'Fulfilled';
+      }
+      if (item.fulfilmentLevel >= 2) {
+        return 'Partially fulfilled';
+      }
+      return 'Not fulfilled';
+    }
     switch (item.fulfilmentLevel) {
       case 2:
         return 'Fulfilled';

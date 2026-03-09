@@ -1,3 +1,8 @@
+enum ChecklistScoringModel {
+  conformity,
+  maturity,
+}
+
 class ChecklistEvidence {
   ChecklistEvidence({
     required this.filePath,
@@ -19,15 +24,19 @@ class ChecklistItem {
     this.domainId = '',
     this.domainName = '',
     this.domainDescription = '',
-    this.isMandatory = true,
+    this.scoringModel = ChecklistScoringModel.conformity,
     bool isFulfilled = false,
     int? fulfilmentLevel,
     this.note = '',
     List<String>? criteria,
+    Map<int, List<String>>? anchorCriteria,
     List<ChecklistEvidence>? evidence,
-  })  : fulfilmentLevel =
-            (fulfilmentLevel ?? (isFulfilled ? 2 : 0)).clamp(0, 2),
+  })  : fulfilmentLevel = _normalizeFulfilmentLevel(
+          scoringModel: scoringModel,
+          value: fulfilmentLevel ?? (isFulfilled ? 2 : 0),
+        ),
         criteria = criteria ?? <String>[],
+        anchorCriteria = _normalizeAnchorCriteria(anchorCriteria),
         evidence = evidence ?? <ChecklistEvidence>[];
 
   final String id;
@@ -37,21 +46,44 @@ class ChecklistItem {
   final String title;
   final String description;
   final int riskLevel;
-  bool isMandatory;
+  final ChecklistScoringModel scoringModel;
   int fulfilmentLevel;
   String note;
   final List<String> criteria;
+  final Map<int, List<String>> anchorCriteria;
   final List<ChecklistEvidence> evidence;
 
-  bool get isFulfilled => fulfilmentLevel == 2;
-  bool get isPartiallyFulfilled => fulfilmentLevel == 1;
+  bool get usesMaturityScoring =>
+      scoringModel == ChecklistScoringModel.maturity;
+
+  bool get isFulfilled =>
+      usesMaturityScoring ? fulfilmentLevel >= 5 : fulfilmentLevel == 2;
+  bool get isPartiallyFulfilled => usesMaturityScoring
+      ? fulfilmentLevel >= 1 && fulfilmentLevel < 5
+      : fulfilmentLevel == 1;
   bool get isNotFulfilled => fulfilmentLevel == 0;
 
   set isFulfilled(bool value) {
-    fulfilmentLevel = value ? 2 : 0;
+    fulfilmentLevel = value ? (usesMaturityScoring ? 5 : 2) : 0;
   }
 
   String get fulfilmentLabel {
+    if (usesMaturityScoring) {
+      switch (fulfilmentLevel.clamp(0, 5)) {
+        case 0:
+          return '0 – nicht vorhanden';
+        case 1:
+          return '1 – initial / ad-hoc';
+        case 2:
+          return '2 – wiederholbar';
+        case 3:
+          return '3 – definiert';
+        case 4:
+          return '4 – gemanagt';
+        default:
+          return '5 – optimiert';
+      }
+    }
     switch (fulfilmentLevel) {
       case 2:
         return 'Komplett erfüllt';
@@ -60,5 +92,70 @@ class ChecklistItem {
       default:
         return 'Nicht erfüllt';
     }
+  }
+
+  String anchorLabelForLevel(int level) {
+    final normalized = normalizeFulfilmentLevel(level);
+    if (usesMaturityScoring) {
+      switch (normalized) {
+        case 0:
+          return '0 – nicht vorhanden';
+        case 1:
+          return '1 – initial / ad-hoc';
+        case 2:
+          return '2 – wiederholbar';
+        case 3:
+          return '3 – definiert';
+        case 4:
+          return '4 – gemanagt';
+        default:
+          return '5 – optimiert';
+      }
+    }
+    switch (normalized) {
+      case 0:
+        return 'Nicht erfüllt';
+      case 1:
+        return 'Teilweise erfüllt';
+      default:
+        return 'Erfüllt';
+    }
+  }
+
+  List<String> criteriaForLevel(int level) {
+    final normalized = normalizeFulfilmentLevel(level);
+    final specific = anchorCriteria[normalized];
+    if (specific == null || specific.isEmpty) {
+      return criteria;
+    }
+    return specific;
+  }
+
+  List<String> get activeAnchorCriteria => criteriaForLevel(fulfilmentLevel);
+
+  int normalizeFulfilmentLevel(int value) {
+    return _normalizeFulfilmentLevel(scoringModel: scoringModel, value: value);
+  }
+
+  static int _normalizeFulfilmentLevel({
+    required ChecklistScoringModel scoringModel,
+    required int value,
+  }) {
+    if (scoringModel == ChecklistScoringModel.maturity) {
+      return value.clamp(0, 5);
+    }
+    return value.clamp(0, 2);
+  }
+
+  static Map<int, List<String>> _normalizeAnchorCriteria(
+    Map<int, List<String>>? input,
+  ) {
+    if (input == null || input.isEmpty) {
+      return <int, List<String>>{};
+    }
+    return <int, List<String>>{
+      for (final entry in input.entries)
+        entry.key: List<String>.from(entry.value),
+    };
   }
 }

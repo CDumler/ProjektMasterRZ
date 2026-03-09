@@ -23,6 +23,9 @@ class ChecklistTile extends StatelessWidget {
     final accent = domainAccentColor ?? const Color(0xFF0F766E);
     final statusStyle = _statusStyle(_statusFor(item));
     final isHighCriticality = item.riskLevel >= 4;
+    final usesMaturityScoring = item.usesMaturityScoring;
+    final visibleCriteria = item.activeAnchorCriteria;
+    final activeAnchorLabel = item.anchorLabelForLevel(item.fulfilmentLevel);
 
     return Card(
       color: Colors.white,
@@ -86,9 +89,6 @@ class ChecklistTile extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(statusStyle.icon,
-                          size: 14, color: statusStyle.color),
-                      const SizedBox(width: 6),
                       Text(
                         statusStyle.label,
                         style: TextStyle(
@@ -108,49 +108,77 @@ class ChecklistTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(color: const Color(0xFFFCA5A5)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.priority_high_rounded,
-                          size: 14,
-                          color: Color(0xFFB91C1C),
-                        ),
-                        SizedBox(width: 6),
                         Text(
-                          'Hohe Kritikalität',
-                          style: TextStyle(
+                          'Hohe Kritikalität · Stufe ${item.riskLevel}',
+                          style: const TextStyle(
                             color: Color(0xFFB91C1C),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  )
+                else
+                  RiskBadge(riskLevel: item.riskLevel),
               ],
             ),
             const SizedBox(height: 10),
             InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Erfüllungsstatus',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: usesMaturityScoring
+                    ? 'Reifegradbewertung'
+                    : 'Erfüllungsstatus',
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<int>(
                   value: item.fulfilmentLevel,
                   isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(value: 0, child: Text('Nicht erfüllt')),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text('Teilweise erfüllt'),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text('Komplett erfüllt'),
-                    ),
-                  ],
+                  items: usesMaturityScoring
+                      ? const [
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text('0 – nicht vorhanden'),
+                          ),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text('1 – initial / ad-hoc'),
+                          ),
+                          DropdownMenuItem(
+                            value: 2,
+                            child: Text('2 – wiederholbar'),
+                          ),
+                          DropdownMenuItem(
+                            value: 3,
+                            child: Text('3 – definiert'),
+                          ),
+                          DropdownMenuItem(
+                            value: 4,
+                            child: Text('4 – gemanagt'),
+                          ),
+                          DropdownMenuItem(
+                            value: 5,
+                            child: Text('5 – optimiert'),
+                          ),
+                        ]
+                      : const [
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text('Nicht erfüllt'),
+                          ),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text('Teilweise erfüllt'),
+                          ),
+                          DropdownMenuItem(
+                            value: 2,
+                            child: Text('Komplett erfüllt'),
+                          ),
+                        ],
                   onChanged: (value) {
                     if (value == null) {
                       return;
@@ -165,14 +193,14 @@ class ChecklistTile extends StatelessWidget {
               item.description,
               textAlign: TextAlign.left,
             ),
-            if (item.criteria.isNotEmpty) ...[
+            if (visibleCriteria.isNotEmpty) ...[
               const SizedBox(height: 10),
               _SectionCard(
                 title: 'Kriterien',
-                subtitle: 'Prüfpunkte für dieses Control',
+                subtitle: 'Bewertungsanker: $activeAnchorLabel',
                 child: Column(
                   children: [
-                    for (final criterion in item.criteria)
+                    for (final criterion in visibleCriteria)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(
@@ -200,34 +228,6 @@ class ChecklistTile extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: item.isMandatory
-                        ? const Color(0xFFFEE2E2)
-                        : const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    item.isMandatory ? 'Pflichtpunkt' : 'Optionaler Punkt',
-                    style: TextStyle(
-                      color: item.isMandatory
-                          ? const Color(0xFF991B1B)
-                          : const Color(0xFF065F46),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                RiskBadge(riskLevel: item.riskLevel),
-              ],
-            ),
             const SizedBox(height: 10),
             _SectionCard(
               title: 'Evidence',
@@ -236,7 +236,11 @@ class ChecklistTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextButton.icon(
-                    onPressed: item.fulfilmentLevel == 2 ? onAddEvidence : null,
+                    onPressed: (item.usesMaturityScoring
+                            ? item.fulfilmentLevel > 0
+                            : item.fulfilmentLevel == 2)
+                        ? onAddEvidence
+                        : null,
                     icon: const Icon(Icons.attach_file),
                     label: const Text('Evidenz hochladen'),
                   ),
@@ -300,6 +304,15 @@ class ChecklistTile extends StatelessWidget {
     if (!_isAssessed(control)) {
       return _ControlUiStatus.notAssessed;
     }
+    if (control.usesMaturityScoring) {
+      if (control.fulfilmentLevel >= 4) {
+        return _ControlUiStatus.fulfilled;
+      }
+      if (control.fulfilmentLevel >= 2) {
+        return _ControlUiStatus.partial;
+      }
+      return _ControlUiStatus.notFulfilled;
+    }
     switch (control.fulfilmentLevel) {
       case 2:
         return _ControlUiStatus.fulfilled;
@@ -316,25 +329,21 @@ class ChecklistTile extends StatelessWidget {
         return const _ControlStatusStyle(
           label: 'Nicht bewertet',
           color: Color(0xFF6B7280),
-          icon: Icons.radio_button_unchecked,
         );
       case _ControlUiStatus.notFulfilled:
         return const _ControlStatusStyle(
           label: 'Nicht erfüllt',
           color: Color(0xFFB91C1C),
-          icon: Icons.cancel,
         );
       case _ControlUiStatus.partial:
         return const _ControlStatusStyle(
           label: 'Teilweise erfüllt',
           color: Color(0xFFC2410C),
-          icon: Icons.adjust,
         );
       case _ControlUiStatus.fulfilled:
         return const _ControlStatusStyle(
           label: 'Erfüllt',
           color: Color(0xFF15803D),
-          icon: Icons.check_circle,
         );
     }
   }
@@ -392,10 +401,8 @@ class _ControlStatusStyle {
   const _ControlStatusStyle({
     required this.label,
     required this.color,
-    required this.icon,
   });
 
   final String label;
   final Color color;
-  final IconData icon;
 }

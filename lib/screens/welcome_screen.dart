@@ -50,8 +50,6 @@ class WelcomeScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const _HeroBadge(),
-                          const SizedBox(height: 18),
                           Text(
                             'Willkommen zur\nRZ-Checkliste und Kritikalitätsanalyse.',
                             textAlign: TextAlign.center,
@@ -69,23 +67,6 @@ class WelcomeScreen extends StatelessWidget {
                               color: const Color(0xFF245F5A),
                               height: 1.45,
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          const Wrap(
-                            alignment: WrapAlignment.center,
-                            runSpacing: 10,
-                            spacing: 10,
-                            children: [
-                              _FeatureChip(
-                                  icon: Icons.rule_folder,
-                                  label: 'Normreferenziert'),
-                              _FeatureChip(
-                                  icon: Icons.verified_user,
-                                  label: 'Auditfähig'),
-                              _FeatureChip(
-                                  icon: Icons.lock_clock,
-                                  label: 'Revisionssicher'),
-                            ],
                           ),
                           const SizedBox(height: 22),
                           SizedBox(
@@ -121,69 +102,3 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-class _HeroBadge extends StatelessWidget {
-  const _HeroBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE6FFFB),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: const Color(0xFF9EDFD6)),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.security_rounded, size: 18, color: Color(0xFF0E7490)),
-            SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Enterprise Data Center Assessment',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Color(0xFF0E7490),
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFA8E6DE)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: const Color(0xFF0F766E)),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-                color: Color(0xFF155E57), fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-    );
-  }
-}

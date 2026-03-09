@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:rz_checkliste_risikoanalyse/data/control_reference_mapping.dart';
 import 'package:rz_checkliste_risikoanalyse/models/checklist_item.dart';
 import 'package:rz_checkliste_risikoanalyse/widgets/checklist_tile.dart';
 
@@ -57,6 +58,11 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
     final previousLevel = item.fulfilmentLevel;
     widget.onItemChanged(item.id, fulfilmentLevel);
 
+    if (item.usesMaturityScoring) {
+      setState(() {});
+      return;
+    }
+
     if (fulfilmentLevel != 2 || previousLevel == 2) {
       setState(() {});
       return;
@@ -98,27 +104,40 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
         item.evidence.isNotEmpty;
   }
 
+  int? _statusBucketFor(ChecklistItem item) {
+    if (!_isItemAssessed(item)) {
+      return null;
+    }
+    if (item.usesMaturityScoring) {
+      if (item.fulfilmentLevel >= 4) {
+        return 2;
+      }
+      if (item.fulfilmentLevel >= 2) {
+        return 1;
+      }
+      return 0;
+    }
+    switch (item.fulfilmentLevel) {
+      case 2:
+        return 2;
+      case 1:
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
   _AssessmentCompletion _buildCompletion(List<ChecklistItem> items) {
     final total = items.length;
     final assessed = items.where(_isItemAssessed).length;
     final coverage = total == 0 ? 0.0 : assessed / total;
-
-    final mandatoryItems =
-        items.where((item) => item.isMandatory).toList(growable: false);
-    final optionalItems =
-        items.where((item) => !item.isMandatory).toList(growable: false);
-
-    final openMandatory =
-        mandatoryItems.where((item) => !_isItemAssessed(item)).length;
-    final openOptional =
-        optionalItems.where((item) => !_isItemAssessed(item)).length;
+    final openControls = items.where((item) => !_isItemAssessed(item)).length;
 
     return _AssessmentCompletion(
       total: total,
       assessed: assessed,
       coverage: coverage,
-      openMandatory: openMandatory,
-      openOptional: openOptional,
+      openControls: openControls,
     );
   }
 
@@ -140,25 +159,14 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
             Text('${summary.assessed} / ${summary.total} bewertet'),
             const SizedBox(height: 14),
             const Text(
-              'Mandatory Controls:',
+              'Offene Controls:',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 3),
             Text(
-              summary.openMandatory == 0
+              summary.openControls == 0
                   ? '✔ vollständig bewertet'
-                  : '${summary.openMandatory} noch offen',
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Optional Controls:',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              summary.openOptional == 0
-                  ? '✔ vollständig bewertet'
-                  : '${summary.openOptional} noch offen',
+                  : '${summary.openControls} noch offen',
             ),
           ],
         ),
@@ -185,6 +193,62 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
       return;
     }
     Navigator.of(context).pop();
+  }
+
+  Future<void> _showControlMapping(ChecklistItem item) async {
+    final references = controlReferenceMapping[item.id] ?? const <String>[];
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Control Mapping ${item.id}'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                if (item.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Beschreibung',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(item.description),
+                ],
+                const SizedBox(height: 12),
+                const Text(
+                  'Referenzen',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                if (references.isEmpty)
+                  const Text('Keine Referenzen für dieses Control hinterlegt.')
+                else
+                  ...references.map(
+                    (reference) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text('• $reference'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Schließen'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -238,12 +302,11 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
     final expanded = _expandedByDomain[domainKey] ?? true;
     final total = group.items.length;
     final fulfilled =
-        group.items.where((item) => item.fulfilmentLevel == 2).length;
+        group.items.where((item) => _statusBucketFor(item) == 2).length;
     final partial =
-        group.items.where((item) => item.fulfilmentLevel == 1).length;
-    final notFulfilled = group.items
-        .where((item) => item.fulfilmentLevel == 0 && _isItemAssessed(item))
-        .length;
+        group.items.where((item) => _statusBucketFor(item) == 1).length;
+    final notFulfilled =
+        group.items.where((item) => _statusBucketFor(item) == 0).length;
     final notAssessed =
         group.items.where((item) => !_isItemAssessed(item)).length;
     final assessed = total - notAssessed;
@@ -376,14 +439,55 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
             for (final item in group.items)
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                child: ChecklistTile(
-                  item: item,
-                  onFulfilmentChanged: (level) =>
-                      _onFulfilmentChanged(item, level),
-                  onAddEvidence: () => _uploadEvidenceFor(item),
-                  onNoteChanged: (value) =>
-                      widget.onNoteChanged(item.id, value),
-                  domainAccentColor: style.accent,
+                child: Stack(
+                  children: [
+                    ChecklistTile(
+                      item: item,
+                      onFulfilmentChanged: (level) =>
+                          _onFulfilmentChanged(item, level),
+                      onAddEvidence: () => _uploadEvidenceFor(item),
+                      onNoteChanged: (value) =>
+                          widget.onNoteChanged(item.id, value),
+                      domainAccentColor: style.accent,
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Tooltip(
+                        message: 'Control Mapping anzeigen',
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.94),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: style.border.withValues(alpha: 0.95),
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x12000000),
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: SizedBox(
+                            width: 30,
+                            height: 30,
+                            child: IconButton(
+                              onPressed: () => _showControlMapping(item),
+                              iconSize: 16,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.info_outline_rounded,
+                                color: style.accent,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -470,15 +574,13 @@ class _AssessmentCompletion {
     required this.total,
     required this.assessed,
     required this.coverage,
-    required this.openMandatory,
-    required this.openOptional,
+    required this.openControls,
   });
 
   final int total;
   final int assessed;
   final double coverage;
-  final int openMandatory;
-  final int openOptional;
+  final int openControls;
 
   int get coveragePercent => (coverage * 100).round();
 }

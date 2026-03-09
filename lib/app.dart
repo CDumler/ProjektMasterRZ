@@ -13,6 +13,42 @@ import 'package:rz_checkliste_risikoanalyse/screens/profile_screen.dart';
 import 'package:rz_checkliste_risikoanalyse/screens/risk_analysis_screen.dart';
 import 'package:rz_checkliste_risikoanalyse/screens/welcome_screen.dart';
 
+class _UserProfile {
+  const _UserProfile({
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.password,
+    required this.address,
+    required this.company,
+  });
+
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String password;
+  final String address;
+  final String company;
+
+  _UserProfile copyWith({
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? password,
+    String? address,
+    String? company,
+  }) {
+    return _UserProfile(
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      email: email ?? this.email,
+      password: password ?? this.password,
+      address: address ?? this.address,
+      company: company ?? this.company,
+    );
+  }
+}
+
 class DatacenterApp extends StatefulWidget {
   const DatacenterApp({super.key});
 
@@ -27,8 +63,15 @@ class _DatacenterAppState extends State<DatacenterApp> {
 
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final PdfReportGenerator _reportGenerator = const PdfReportGenerator();
-  final Map<String, String> _accounts = <String, String>{
-    _adminEmail: _adminPassword,
+  final Map<String, _UserProfile> _accounts = <String, _UserProfile>{
+    _adminEmail: const _UserProfile(
+      firstName: 'Admin',
+      lastName: 'User',
+      email: _adminEmail,
+      password: _adminPassword,
+      address: '',
+      company: 'RZ Checkliste',
+    ),
   };
   String? _activeUserEmail = _adminEmail;
   final List<ChecklistItem> _checklistTemplate =
@@ -52,11 +95,19 @@ class _DatacenterAppState extends State<DatacenterApp> {
   List<ChecklistItem> get _activeItems =>
       _activeAssessment?.items ?? <ChecklistItem>[];
 
+  _UserProfile? get _activeUserProfile {
+    final email = _activeUserEmail;
+    if (email == null) {
+      return null;
+    }
+    return _accounts[email];
+  }
+
   void _updateItem(String id, int fulfilmentLevel) {
     setState(() {
       for (final item in _activeItems) {
         if (item.id == id) {
-          item.fulfilmentLevel = fulfilmentLevel.clamp(0, 2);
+          item.fulfilmentLevel = item.normalizeFulfilmentLevel(fulfilmentLevel);
           break;
         }
       }
@@ -163,10 +214,14 @@ class _DatacenterAppState extends State<DatacenterApp> {
                         title: e.title,
                         description: e.description,
                         riskLevel: e.riskLevel,
-                        isMandatory: e.isMandatory,
+                        scoringModel: e.scoringModel,
                         fulfilmentLevel: e.fulfilmentLevel,
                         note: '',
                         criteria: List<String>.from(e.criteria),
+                        anchorCriteria: <int, List<String>>{
+                          for (final entry in e.anchorCriteria.entries)
+                            entry.key: List<String>.from(entry.value),
+                        },
                         evidence: <ChecklistEvidence>[],
                       ),
                     )
@@ -191,14 +246,24 @@ class _DatacenterAppState extends State<DatacenterApp> {
             _activeAssessmentId = assessment.id;
             _openHome();
           },
+          onDeleteAssessments: (assessmentIds) {
+            setState(() {
+              _assessments.removeWhere(
+                  (assessment) => assessmentIds.contains(assessment.id));
+              if (_activeAssessmentId != null &&
+                  assessmentIds.contains(_activeAssessmentId)) {
+                _activeAssessmentId = null;
+              }
+            });
+          },
         ),
       ),
     );
   }
 
   void _openProfile() {
-    final email = _activeUserEmail;
-    if (email == null) {
+    final profile = _activeUserProfile;
+    if (profile == null) {
       _openLogin();
       return;
     }
@@ -206,7 +271,13 @@ class _DatacenterAppState extends State<DatacenterApp> {
     _navigatorKey.currentState?.pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => ProfileScreen(
-          email: email,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          password: profile.password,
+          address: profile.address,
+          company: profile.company,
+          onSaveProfile: _saveProfile,
           onStartAssessment: _startAssessment,
           onOpenExistingAssessment: _openExistingAssessments,
           onLogout: _logout,
@@ -236,13 +307,53 @@ class _DatacenterAppState extends State<DatacenterApp> {
     _openLogin(resetStack: true);
   }
 
+  Future<String?> _saveProfile(ProfileFormData data) async {
+    final currentEmail = _activeUserEmail;
+    if (currentEmail == null) {
+      return 'Kein aktives Benutzerkonto gefunden.';
+    }
+
+    final currentProfile = _accounts[currentEmail];
+    if (currentProfile == null) {
+      return 'Benutzerprofil nicht gefunden.';
+    }
+
+    final normalizedEmail = data.email.trim().toLowerCase();
+    if (normalizedEmail.isEmpty) {
+      return 'Bitte E-Mail-Adresse eingeben.';
+    }
+    if (normalizedEmail != currentEmail &&
+        _accounts.containsKey(normalizedEmail)) {
+      return 'Für diese E-Mail-Adresse existiert bereits ein Konto.';
+    }
+
+    final updated = currentProfile.copyWith(
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      email: normalizedEmail,
+      password: data.password,
+      address: data.address.trim(),
+      company: data.company.trim(),
+    );
+
+    setState(() {
+      if (normalizedEmail != currentEmail) {
+        _accounts.remove(currentEmail);
+      }
+      _accounts[normalizedEmail] = updated;
+      _activeUserEmail = normalizedEmail;
+    });
+
+    return null;
+  }
+
   Future<String?> _login(String email, String password) async {
     final normalizedMail = email.toLowerCase();
-    final storedPassword = _accounts[normalizedMail];
-    if (storedPassword == null) {
+    final profile = _accounts[normalizedMail];
+    if (profile == null) {
       return 'Kein Konto gefunden. Bitte zuerst registrieren.';
     }
-    if (storedPassword != password) {
+    if (profile.password != password) {
       return 'E-Mail-Adresse oder Passwort ist falsch.';
     }
     _activeUserEmail = normalizedMail;
@@ -258,7 +369,14 @@ class _DatacenterAppState extends State<DatacenterApp> {
     if (password != confirmPassword) {
       return 'Passwörter stimmen nicht überein.';
     }
-    _accounts[normalizedMail] = password;
+    _accounts[normalizedMail] = _UserProfile(
+      firstName: '',
+      lastName: '',
+      email: normalizedMail,
+      password: password,
+      address: '',
+      company: '',
+    );
     return null;
   }
 

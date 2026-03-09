@@ -1,19 +1,45 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+
+class ProfileFormData {
+  const ProfileFormData({
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.password,
+    required this.address,
+    required this.company,
+  });
+
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String password;
+  final String address;
+  final String company;
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
     super.key,
+    required this.firstName,
+    required this.lastName,
     required this.email,
+    required this.password,
+    required this.address,
+    required this.company,
+    required this.onSaveProfile,
     required this.onStartAssessment,
     required this.onOpenExistingAssessment,
     required this.onLogout,
   });
 
+  final String firstName;
+  final String lastName;
   final String email;
+  final String password;
+  final String address;
+  final String company;
+  final Future<String?> Function(ProfileFormData data) onSaveProfile;
   final VoidCallback onStartAssessment;
   final VoidCallback onOpenExistingAssessment;
   final VoidCallback onLogout;
@@ -23,91 +49,156 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String? _profileImagePath;
-  final ImagePicker _imagePicker = ImagePicker();
+  late ProfileFormData _profile;
 
-  Future<void> _addProfileImage() async {
-    final source = await showModalBottomSheet<_ImageSourceChoice>(
+  @override
+  void initState() {
+    super.initState();
+    _profile = ProfileFormData(
+      firstName: widget.firstName,
+      lastName: widget.lastName,
+      email: widget.email,
+      password: widget.password,
+      address: widget.address,
+      company: widget.company,
+    );
+  }
+
+  String get _displayName {
+    final fullName = '${_profile.firstName} ${_profile.lastName}'.trim();
+    return fullName.isEmpty ? 'Nicht hinterlegt' : fullName;
+  }
+
+  Future<void> _openEditDialog() async {
+    final firstNameController = TextEditingController(text: _profile.firstName);
+    final lastNameController = TextEditingController(text: _profile.lastName);
+    final emailController = TextEditingController(text: _profile.email);
+    final passwordController = TextEditingController(text: _profile.password);
+    final addressController = TextEditingController(text: _profile.address);
+    final companyController = TextEditingController(text: _profile.company);
+    final formKey = GlobalKey<FormState>();
+
+    final edited = await showDialog<ProfileFormData>(
       context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Aus Fotos auswählen'),
-                onTap: () => Navigator.pop(context, _ImageSourceChoice.photos),
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Profil bearbeiten'),
+          content: SizedBox(
+            width: 520,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: firstNameController,
+                      decoration: const InputDecoration(labelText: 'Vorname'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: lastNameController,
+                      decoration: const InputDecoration(labelText: 'Name'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration:
+                          const InputDecoration(labelText: 'E-Mail-Adresse'),
+                      validator: (value) {
+                        final email = (value ?? '').trim();
+                        if (email.isEmpty) {
+                          return 'Bitte E-Mail-Adresse eingeben.';
+                        }
+                        if (!email.contains('@') || !email.contains('.')) {
+                          return 'Bitte gültige E-Mail-Adresse eingeben.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'Passwort'),
+                      validator: (value) {
+                        final password = value ?? '';
+                        if (password.length < 8) {
+                          return 'Passwort muss mindestens 8 Zeichen haben.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: addressController,
+                      decoration: const InputDecoration(labelText: 'Adresse'),
+                      minLines: 1,
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: companyController,
+                      decoration: const InputDecoration(labelText: 'Firma'),
+                    ),
+                  ],
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.folder_open),
-                title: const Text('Aus Dateien auswählen'),
-                onTap: () => Navigator.pop(context, _ImageSourceChoice.files),
-              ),
-              ListTile(
-                leading: const Icon(Icons.close),
-                title: const Text('Abbrechen'),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) {
+                  return;
+                }
+                Navigator.pop(
+                  dialogContext,
+                  ProfileFormData(
+                    firstName: firstNameController.text.trim(),
+                    lastName: lastNameController.text.trim(),
+                    email: emailController.text.trim().toLowerCase(),
+                    password: passwordController.text,
+                    address: addressController.text.trim(),
+                    company: companyController.text.trim(),
+                  ),
+                );
+              },
+              child: const Text('Speichern'),
+            ),
+          ],
         );
       },
     );
 
-    if (source == null) {
+    if (edited == null) {
       return;
     }
 
-    switch (source) {
-      case _ImageSourceChoice.photos:
-        await _pickFromPhotos();
-      case _ImageSourceChoice.files:
-        await _pickFromFiles();
+    final error = await widget.onSaveProfile(edited);
+    if (!mounted) {
+      return;
     }
-  }
 
-  Future<void> _pickFromPhotos() async {
-    try {
-      final picked = await _imagePicker.pickImage(source: ImageSource.gallery);
-      if (picked == null) {
-        return;
-      }
-      setState(() => _profileImagePath = picked.path);
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Fotos konnten nicht geöffnet werden. Bitte Berechtigung in iOS-Einstellungen prüfen.',
-          ),
-        ),
-      );
+    if (error != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
+      return;
     }
-  }
 
-  Future<void> _pickFromFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowMultiple: false,
-      allowedExtensions: const ['png', 'jpg', 'jpeg'],
+    setState(() => _profile = edited);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profil aktualisiert.')),
     );
-
-    final path = (result == null || result.files.isEmpty) ? null : result.files.first.path;
-    if (path == null) {
-      return;
-    }
-
-    setState(() => _profileImagePath = path);
   }
 
   @override
   Widget build(BuildContext context) {
-    final imageProvider = _profileImagePath == null ? null : FileImage(File(_profileImagePath!));
-
     return Scaffold(
       appBar: AppBar(title: const Text('Profil des Prüfers')),
       body: Center(
@@ -121,49 +212,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    CircleAvatar(
-                      radius: 52,
-                      backgroundColor: const Color(0xFFCCFBF1),
-                      foregroundImage: imageProvider,
-                      child: imageProvider == null
-                          ? const Icon(Icons.person, size: 56, color: Color(0xFF0F766E))
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: _addProfileImage,
-                      icon: const Icon(Icons.add_a_photo_outlined),
-                      label: const Text('Profilbild hinzufügen'),
-                    ),
-                    const SizedBox(height: 10),
                     const Text(
-                      'Angemeldetes Konto',
+                      'Benutzerprofil',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.email,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
+                    const SizedBox(height: 12),
+                    _ProfileInfoRow(
+                        label: 'Vorname', value: _profile.firstName),
+                    _ProfileInfoRow(label: 'Name', value: _profile.lastName),
+                    _ProfileInfoRow(label: 'Anzeigename', value: _displayName),
+                    _ProfileInfoRow(label: 'E-Mail', value: _profile.email),
+                    _ProfileInfoRow(label: 'Adresse', value: _profile.address),
+                    _ProfileInfoRow(label: 'Firma', value: _profile.company),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _openEditDialog,
+                      child: const Text('Profil bearbeiten'),
                     ),
                     const SizedBox(height: 20),
-                    FilledButton.icon(
+                    FilledButton(
                       onPressed: widget.onStartAssessment,
-                      icon: const Icon(Icons.play_circle_outline),
-                      label: const Text('Prüfung starten'),
+                      child: const Text('Prüfung starten'),
                     ),
                     const SizedBox(height: 10),
-                    OutlinedButton.icon(
+                    OutlinedButton(
                       onPressed: widget.onOpenExistingAssessment,
-                      icon: const Icon(Icons.folder_open),
-                      label: const Text('Zu bestehender Prüfung'),
+                      child: const Text('Zu bestehender Prüfung'),
                     ),
                     const SizedBox(height: 10),
-                    TextButton.icon(
+                    TextButton(
                       onPressed: widget.onLogout,
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Abmelden'),
+                      child: const Text('Abmelden'),
                     ),
                   ],
                 ),
@@ -176,4 +256,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-enum _ImageSourceChoice { photos, files }
+class _ProfileInfoRow extends StatelessWidget {
+  const _ProfileInfoRow({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayValue = value.trim().isEmpty ? 'Nicht hinterlegt' : value;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(child: Text(displayValue)),
+        ],
+      ),
+    );
+  }
+}
