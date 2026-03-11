@@ -361,7 +361,7 @@ class PdfReportGenerator {
         assessed: risk.assessed,
         riskIndex: risk.riskIndex,
         status: _statusFor(item),
-        riskClass: _riskClassFromScore(risk.riskIndex),
+        riskClass: _riskService.riskClassFromScore(risk.riskIndex),
       );
     }).toList(growable: false);
 
@@ -389,7 +389,7 @@ class PdfReportGenerator {
         id: first.domainId,
         name: first.domainName,
         score: domainScore,
-        riskClass: _riskClassFromScore(domainScore),
+        riskClass: _riskService.riskClassFromScore(domainScore),
         coverage: coverage,
         controls: domainControls,
       );
@@ -415,7 +415,7 @@ class PdfReportGenerator {
       domains: domains,
       rankedDomains: rankedDomains,
       totalScore: totalScore,
-      totalRiskClass: _riskClassFromScore(totalScore),
+      totalRiskClass: _riskService.riskClassFromScore(totalScore),
       totalCoverage: totalCoverage,
       assessedControls: assessedControls,
     );
@@ -587,20 +587,6 @@ class PdfReportGenerator {
       default:
         return 'Not fulfilled';
     }
-  }
-
-  static String _riskClassFromScore(double score) {
-    final safe = score.clamp(0.0, 5.0);
-    if (safe < 1.25) {
-      return 'Low';
-    }
-    if (safe < 2.50) {
-      return 'Medium';
-    }
-    if (safe < 3.75) {
-      return 'High';
-    }
-    return 'Critical';
   }
 
   static double _roundTo(double value) {

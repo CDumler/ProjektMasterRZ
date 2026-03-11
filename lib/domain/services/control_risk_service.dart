@@ -97,7 +97,7 @@ class ControlRiskService {
   }
 
   bool isAssessed(ChecklistItem control) {
-    return control.fulfilmentLevel > 0 ||
+    return control.hasAssessment ||
         control.note.trim().isNotEmpty ||
         control.evidence.isNotEmpty;
   }

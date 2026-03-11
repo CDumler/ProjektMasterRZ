@@ -99,7 +99,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
   }
 
   bool _isItemAssessed(ChecklistItem item) {
-    return item.fulfilmentLevel > 0 ||
+    return item.hasAssessment ||
         item.note.trim().isNotEmpty ||
         item.evidence.isNotEmpty;
   }

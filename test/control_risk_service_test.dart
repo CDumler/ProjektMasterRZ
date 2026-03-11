@@ -6,9 +6,9 @@ void main() {
   const service = ControlRiskService();
 
   ChecklistItem buildItem({
-    required bool isMandatory,
     required int criticality,
     int fulfilmentLevel = 0,
+    bool hasAssessment = true,
     String note = '',
     ChecklistScoringModel scoringModel = ChecklistScoringModel.conformity,
   }) {
@@ -17,16 +17,16 @@ void main() {
       title: 'Control',
       description: 'Description',
       riskLevel: criticality,
-      isMandatory: isMandatory,
       scoringModel: scoringModel,
       fulfilmentLevel: fulfilmentLevel,
+      hasAssessment: hasAssessment,
       note: note,
     );
   }
 
   test('MODE_CONFORMITY: not fulfilled -> effectiveness 0, gap 1', () {
     final result = service.evaluateControl(
-      buildItem(isMandatory: true, criticality: 5, fulfilmentLevel: 0),
+      buildItem(criticality: 5, fulfilmentLevel: 0),
     );
 
     expect(result.modeToken, 'MODE_CONFORMITY');
@@ -38,7 +38,7 @@ void main() {
 
   test('MODE_CONFORMITY: partially fulfilled -> effectiveness 0.5', () {
     final result = service.evaluateControl(
-      buildItem(isMandatory: true, criticality: 4, fulfilmentLevel: 1),
+      buildItem(criticality: 4, fulfilmentLevel: 1),
     );
 
     expect(result.modeToken, 'MODE_CONFORMITY');
@@ -52,7 +52,6 @@ void main() {
       () {
     final result = service.evaluateControl(
       buildItem(
-        isMandatory: false,
         criticality: 5,
         scoringModel: ChecklistScoringModel.maturity,
         fulfilmentLevel: 3,
@@ -69,7 +68,6 @@ void main() {
   test('MODE_MATURITY: supports level-based scoring without note parsing', () {
     final result = service.evaluateControl(
       buildItem(
-        isMandatory: false,
         criticality: 3,
         scoringModel: ChecklistScoringModel.maturity,
         fulfilmentLevel: 2,
@@ -86,7 +84,6 @@ void main() {
   test('riskIndex remains clamped to range 0..5 and rounded', () {
     final result = service.evaluateControl(
       buildItem(
-        isMandatory: false,
         criticality: 9,
         scoringModel: ChecklistScoringModel.maturity,
         fulfilmentLevel: 4,
@@ -104,5 +101,18 @@ void main() {
     expect(maturityLevelLabel(3), 'Defined');
     expect(maturityLevelLabel(4), 'Managed');
     expect(maturityLevelLabel(5), 'Optimized');
+  });
+
+  test('explicit level 0 can still be treated as assessed', () {
+    final result = service.evaluateControl(
+      buildItem(
+        criticality: 5,
+        fulfilmentLevel: 0,
+        hasAssessment: true,
+      ),
+    );
+
+    expect(result.assessed, isTrue);
+    expect(result.riskIndex, 5.0);
   });
 }

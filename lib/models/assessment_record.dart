@@ -6,10 +6,16 @@ class AssessmentRecord {
     required this.name,
     required this.items,
     required this.createdAt,
+    this.createdBy,
+    this.status,
+    this.itemCount,
   });
 
   final String id;
   final String name;
   final List<ChecklistItem> items;
   final DateTime createdAt;
+  final String? createdBy;
+  final String? status;
+  final int? itemCount;
 }

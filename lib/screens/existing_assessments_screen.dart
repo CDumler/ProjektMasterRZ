@@ -11,8 +11,9 @@ class ExistingAssessmentsScreen extends StatefulWidget {
   });
 
   final List<AssessmentRecord> assessments;
-  final void Function(AssessmentRecord assessment) onOpenAssessment;
-  final void Function(List<String> assessmentIds) onDeleteAssessments;
+  final Future<String?> Function(AssessmentRecord assessment) onOpenAssessment;
+  final Future<String?> Function(List<String> assessmentIds)
+      onDeleteAssessments;
 
   @override
   State<ExistingAssessmentsScreen> createState() =>
@@ -64,7 +65,16 @@ class _ExistingAssessmentsScreenState extends State<ExistingAssessmentsScreen> {
     }
 
     final ids = _selectedIds.toList(growable: false);
-    widget.onDeleteAssessments(ids);
+    final error = await widget.onDeleteAssessments(ids);
+    if (error != null) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+      return;
+    }
     setState(() {
       _selectedIds.clear();
       _selectionMode = false;
@@ -101,7 +111,8 @@ class _ExistingAssessmentsScreenState extends State<ExistingAssessmentsScreen> {
             ),
           if (_selectionMode)
             TextButton(
-              onPressed: _selectedIds.isEmpty ? null : _confirmAndDeleteSelected,
+              onPressed:
+                  _selectedIds.isEmpty ? null : _confirmAndDeleteSelected,
               child: const Text('Löschen'),
             ),
           if (_selectionMode)
@@ -142,16 +153,22 @@ class _ExistingAssessmentsScreenState extends State<ExistingAssessmentsScreen> {
                         : null,
                     title: Text(assessment.name),
                     subtitle: Text(
-                        'Erstellt: $formattedDate • Punkte: ${assessment.items.length}'),
+                        'Erstellt: $formattedDate • Punkte: ${assessment.itemCount ?? assessment.items.length}'),
                     trailing:
                         _selectionMode ? null : const Icon(Icons.chevron_right),
                     selected: selected,
-                    onTap: () {
+                    onTap: () async {
                       if (_selectionMode) {
                         _toggleSelection(assessment.id);
                         return;
                       }
-                      widget.onOpenAssessment(assessment);
+                      final error = await widget.onOpenAssessment(assessment);
+                      if (!mounted || error == null) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(content: Text(error)),
+                      );
                     },
                   ),
                 );

@@ -25,6 +25,7 @@ class ChecklistItem {
     this.domainName = '',
     this.domainDescription = '',
     this.scoringModel = ChecklistScoringModel.conformity,
+    bool? hasAssessment,
     bool isFulfilled = false,
     int? fulfilmentLevel,
     this.note = '',
@@ -35,6 +36,8 @@ class ChecklistItem {
           scoringModel: scoringModel,
           value: fulfilmentLevel ?? (isFulfilled ? 2 : 0),
         ),
+        hasAssessment =
+            hasAssessment ?? ((fulfilmentLevel ?? (isFulfilled ? 2 : 0)) > 0),
         criteria = criteria ?? <String>[],
         anchorCriteria = _normalizeAnchorCriteria(anchorCriteria),
         evidence = evidence ?? <ChecklistEvidence>[];
@@ -47,6 +50,7 @@ class ChecklistItem {
   final String description;
   final int riskLevel;
   final ChecklistScoringModel scoringModel;
+  bool hasAssessment;
   int fulfilmentLevel;
   String note;
   final List<String> criteria;
@@ -65,6 +69,12 @@ class ChecklistItem {
 
   set isFulfilled(bool value) {
     fulfilmentLevel = value ? (usesMaturityScoring ? 5 : 2) : 0;
+    hasAssessment = true;
+  }
+
+  void applyFulfilmentLevel(int value) {
+    fulfilmentLevel = normalizeFulfilmentLevel(value);
+    hasAssessment = true;
   }
 
   String get fulfilmentLabel {

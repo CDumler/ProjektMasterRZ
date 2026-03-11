@@ -237,7 +237,7 @@ class ChecklistTile extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: (item.usesMaturityScoring
-                            ? item.fulfilmentLevel > 0
+                            ? item.hasAssessment && item.fulfilmentLevel > 0
                             : item.fulfilmentLevel == 2)
                         ? onAddEvidence
                         : null,
@@ -295,7 +295,7 @@ class ChecklistTile extends StatelessWidget {
   }
 
   bool _isAssessed(ChecklistItem control) {
-    return control.fulfilmentLevel > 0 ||
+    return control.hasAssessment ||
         control.note.trim().isNotEmpty ||
         control.evidence.isNotEmpty;
   }

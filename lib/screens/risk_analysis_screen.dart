@@ -657,7 +657,7 @@ class _RiskComputation {
       effectivenessE: computed.effectiveness,
       gapG: computed.gap,
       riskIndex: computed.riskIndex,
-      riskClass: _riskClassFromScore(computed.riskIndex),
+      riskClass: computed.riskClass,
       assessed: computed.assessed,
     );
   }
@@ -688,7 +688,7 @@ class _RiskComputation {
         domainName: first.domainName,
         domainDescription: first.domainDescription,
         domainScore: score,
-        riskClass: _riskClassFromScore(score),
+        riskClass: _scoreService.riskClassFromScore(score),
         coverage: coverage,
         controls: list,
       );
@@ -713,7 +713,7 @@ class _RiskComputation {
 
     return _TotalRiskResult(
       totalScore: totalScore,
-      totalRiskClass: _riskClassFromScore(totalScore),
+      totalRiskClass: _scoreService.riskClassFromScore(totalScore),
       totalCoverage: totalCoverage,
       domains: domains,
       topRisks: top,
@@ -742,20 +742,6 @@ Color _riskClassColor(String riskClass) {
     default:
       return Colors.blueGrey;
   }
-}
-
-String _riskClassFromScore(double score) {
-  final safeScore = score.clamp(0.0, 5.0);
-  if (safeScore < 1.25) {
-    return 'Low';
-  }
-  if (safeScore < 2.50) {
-    return 'Medium';
-  }
-  if (safeScore < 3.75) {
-    return 'High';
-  }
-  return 'Critical';
 }
 
 String _formatCoverage(double coverage) {
@@ -936,6 +922,7 @@ List<_ControlRiskResult> _buildAllCatalogRisks(
       riskLevel: catalogItem.riskLevel,
       scoringModel: catalogItem.scoringModel,
       fulfilmentLevel: active.fulfilmentLevel,
+      hasAssessment: active.hasAssessment,
       note: active.note,
       criteria: List<String>.from(catalogItem.criteria),
       anchorCriteria: <int, List<String>>{
