@@ -169,14 +169,13 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
-                FilledButton.icon(
+                FilledButton(
                   onPressed: onOpenChecklist,
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF14B8A6),
                     foregroundColor: Colors.white,
                   ),
-                  icon: const Icon(Icons.checklist),
-                  label: const Text('Checkliste öffnen'),
+                  child: const Text('Checkliste öffnen'),
                 ),
                 const SizedBox(height: 10),
                 _PreviewCard(
@@ -187,14 +186,13 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                FilledButton.icon(
+                FilledButton(
                   onPressed: onOpenRiskAnalysis,
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF14B8A6),
                     foregroundColor: Colors.white,
                   ),
-                  icon: const Icon(Icons.warning_amber_rounded),
-                  label: const Text('Kritikalitätsanalyse öffnen'),
+                  child: const Text('Kritikalitätsanalyse öffnen'),
                 ),
                 const SizedBox(height: 10),
                 _PreviewCard(
@@ -206,14 +204,13 @@ class HomeScreen extends StatelessWidget {
                 ),
                 if (assessmentName != null && onCompleteAssessment != null) ...[
                   const SizedBox(height: 16),
-                  FilledButton.icon(
+                  FilledButton(
                     onPressed: () => _onCompletePressed(context),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF0F766E),
                       foregroundColor: Colors.white,
                     ),
-                    icon: const Icon(Icons.assignment_turned_in),
-                    label: const Text('Prüfung abschließen'),
+                    child: const Text('Prüfung abschließen'),
                   ),
                   const SizedBox(height: 12),
                   const _PreviewCard(

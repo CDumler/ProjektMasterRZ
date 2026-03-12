@@ -222,15 +222,13 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                FilledButton.icon(
+                FilledButton(
                   onPressed: _addItemDialog,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Punkt hinzufügen'),
+                  child: const Text('Punkt hinzufügen'),
                 ),
-                OutlinedButton.icon(
+                OutlinedButton(
                   onPressed: () => setState(() => _editMode = !_editMode),
-                  icon: const Icon(Icons.edit),
-                  label: Text(
+                  child: Text(
                     _editMode ? 'Bearbeiten beendet' : 'Punkte bearbeiten',
                   ),
                 ),
@@ -275,10 +273,9 @@ class _AssessmentSetupScreenState extends State<AssessmentSetupScreen> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: SizedBox(
               width: double.infinity,
-              child: FilledButton.icon(
+              child: FilledButton(
                 onPressed: () => _start(),
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Prüfung mit dieser Checkliste starten'),
+                child: const Text('Prüfung mit dieser Checkliste starten'),
               ),
             ),
           ),
